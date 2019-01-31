@@ -1,8 +1,8 @@
 {
-  "USERNAME": "",
-  "PASSWORD": "",
-  "CLIENT_ID": "",
-  "CLIENT_SECRET": "",
-  "USER_AGENT": "",
-  "SUBREDDIT": "",
+  "USERNAME": "bigluke575",
+  "PASSWORD": "baldfraud",
+  "CLIENT_ID": "p-jcoLKBynTLew",
+  "CLIENT_SECRET": "gko_LXELoV07ZBNUXrvWZfzE3aI",
+  "USER_AGENT": "The original FPLbot.",
+  "SUBREDDIT": "FantasyPL",
 }
