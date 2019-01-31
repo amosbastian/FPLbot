@@ -3,5 +3,6 @@
   "PASSWORD": "",
   "CLIENT_ID": "",
   "CLIENT_SECRET": "",
-  "USER_AGENT": ""
+  "USER_AGENT": "",
+  "SUBREDDIT": "",
 }
