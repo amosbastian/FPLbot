@@ -10,6 +10,7 @@ database = client.fpl
 
 
 async def update_players():
+    """Updates all players in the database."""
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)

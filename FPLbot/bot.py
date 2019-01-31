@@ -40,6 +40,7 @@ class FPLBot:
             old_player = next(player for player in old_players
                               if player["id"] == new_player.id)
 
+            # Player has changed price in the last day
             if old_player["cost_change_event"] > new_player.cost_change_event:
                 if old_player["now_cost"] > new_player.now_cost:
                     fallers.append(new_player)
@@ -49,6 +50,7 @@ class FPLBot:
         return risers, fallers
 
     async def post_price_changes(self):
+        """Posts the price changes to Reddit."""
         risers, fallers = await self.get_price_changers()
         risers_table = get_player_table(risers, True)
         fallers_table = get_player_table(fallers, False)
@@ -64,6 +66,7 @@ class FPLBot:
         today = datetime.now()
         current_date = f"({today:%B} {today.day}, {today.year})"
         post_title = f"Player Price Changes {current_date}"
+
         self.subreddit.submit(post_title, selftext=post_body)
 
 
