@@ -9,7 +9,7 @@ from fpl import FPL
 from fpl.utils import position_converter
 from pymongo import MongoClient
 
-from utils import get_player_table
+from utils import get_player_table, update_players
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 
@@ -31,17 +31,20 @@ class FPLBot:
         time the database was updated.
         """
         new_players = await self.fpl.get_players(include_summary=True)
-        old_players = self.client.fpl.players.find()
+        old_players = [player for player in self.client.fpl.players.find()]
 
         risers = []
         fallers = []
 
         for new_player in new_players:
-            old_player = next(player for player in old_players
-                              if player["id"] == new_player.id)
+            try:
+                old_player = next(player for player in old_players
+                                  if player["id"] == new_player.id)
+            # New player has been added to the game
+            except StopIteration:
+                continue
 
-            # Player has changed price in the last day
-            if old_player["cost_change_event"] > new_player.cost_change_event:
+            if old_player["cost_change_event"] != new_player.cost_change_event:
                 if old_player["now_cost"] > new_player.now_cost:
                     fallers.append(new_player)
                 else:
@@ -68,6 +71,7 @@ class FPLBot:
         post_title = f"Player Price Changes {current_date}"
 
         self.subreddit.submit(post_title, selftext=post_body)
+        update_players()
 
 
 async def main(config):
