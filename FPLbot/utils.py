@@ -7,7 +7,9 @@ from pymongo import MongoClient, ReplaceOne
 
 client = MongoClient()
 database = client.fpl
-
+logger = logging.getLogger("FPLbot - utils")
+logger.setLevel(logging.DEBUG)
+logger.basicConfig()
 
 async def update_players():
     """Updates all players in the database."""
@@ -17,6 +19,8 @@ async def update_players():
 
     requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
                 for player in players]
+
+    logger.info("Updating players in database.")
     database.players.bulk_write(requests)
 
 

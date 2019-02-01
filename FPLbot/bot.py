@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from datetime import datetime
 
@@ -12,6 +13,9 @@ from pymongo import MongoClient
 from utils import get_player_table, update_players
 
 dirname = os.path.dirname(os.path.realpath(__file__))
+logger = logging.getLogger("FPLbot - bot")
+logger.setLevel(logging.DEBUG)
+logger.basicConfig()
 
 
 class FPLBot:
@@ -30,6 +34,7 @@ class FPLBot:
         """Returns a list of players whose price has changed since the last
         time the database was updated.
         """
+        logger.info("Retrieving risers and fallers.")
         new_players = await self.fpl.get_players(include_summary=True)
         old_players = [player for player in self.client.fpl.players.find()]
 
@@ -42,6 +47,7 @@ class FPLBot:
                                   if player["id"] == new_player.id)
             # New player has been added to the game
             except StopIteration:
+                logger.info(f"New player added: {new_player.web_name}.")
                 continue
 
             if old_player["cost_change_event"] != new_player.cost_change_event:
@@ -70,6 +76,7 @@ class FPLBot:
         current_date = f"({today:%B} {today.day}, {today.year})"
         post_title = f"Player Price Changes {current_date}"
 
+        logger.info("Posting price changes to Reddit.")
         self.subreddit.submit(post_title, selftext=post_body)
         update_players()
 
