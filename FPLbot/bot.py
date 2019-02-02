@@ -13,9 +13,9 @@ from pymongo import MongoClient
 from utils import get_player_table, update_players
 
 dirname = os.path.dirname(os.path.realpath(__file__))
-logger = logging.getLogger("FPLbot - bot")
-logger.setLevel(logging.DEBUG)
-logger.basicConfig()
+logger = logging.getLogger("FPLbot")
+logger.setLevel(logging.INFO)
+logging.basicConfig()
 
 
 class FPLBot:
@@ -47,14 +47,13 @@ class FPLBot:
                                   if player["id"] == new_player.id)
             # New player has been added to the game
             except StopIteration:
-                logger.info(f"New player added: {new_player.web_name}.")
+                logger.info(f"New player added: {new_player}.")
                 continue
 
-            if old_player["cost_change_event"] != new_player.cost_change_event:
-                if old_player["now_cost"] > new_player.now_cost:
-                    fallers.append(new_player)
-                else:
-                    risers.append(new_player)
+            if old_player["now_cost"] > new_player.now_cost:
+                fallers.append(new_player)
+            elif old_player["now_cost"] < new_player.now_cost:
+                risers.append(new_player)
 
         return risers, fallers
 
@@ -76,9 +75,9 @@ class FPLBot:
         current_date = f"({today:%B} {today.day}, {today.year})"
         post_title = f"Player Price Changes {current_date}"
 
-        logger.info("Posting price changes to Reddit.")
+        logger.info(f"Posting price changes to Reddit.\n\n{post_body}")
         self.subreddit.submit(post_title, selftext=post_body)
-        update_players()
+        await update_players()
 
 
 async def main(config):

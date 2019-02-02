@@ -1,15 +1,16 @@
 import asyncio
+import logging
 
 import aiohttp
 from fpl import FPL
-from fpl.utils import team_converter, position_converter
+from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
 client = MongoClient()
 database = client.fpl
-logger = logging.getLogger("FPLbot - utils")
+logger = logging.getLogger("FPLbot")
 logger.setLevel(logging.DEBUG)
-logger.basicConfig()
+logging.basicConfig()
 
 async def update_players():
     """Updates all players in the database."""
