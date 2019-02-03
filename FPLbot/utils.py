@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 import aiohttp
 from fpl import FPL
@@ -9,8 +10,34 @@ from pymongo import MongoClient, ReplaceOne
 client = MongoClient()
 database = client.fpl
 logger = logging.getLogger("FPLbot")
-logger.setLevel(logging.DEBUG)
-logging.basicConfig()
+
+
+def create_logger():
+    """Creates a logger object for use in logging across all files.
+
+    See: https://docs.python.org/3/howto/logging-cookbook.html
+    """
+    dirname = os.path.dirname(os.path.realpath(__file__))
+
+    logger = logging.getLogger("FPLbot")
+    logger.setLevel(logging.DEBUG)
+
+    fh = logging.FileHandler(f"{dirname}/FPLbot.log")
+    fh.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - "
+                                  "%(message)s")
+
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    return logger
+
 
 async def update_players():
     """Updates all players in the database."""

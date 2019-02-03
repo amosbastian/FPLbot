@@ -10,12 +10,10 @@ from fpl import FPL
 from fpl.utils import position_converter
 from pymongo import MongoClient
 
-from utils import get_player_table, update_players
+from utils import create_logger, get_player_table, update_players
 
 dirname = os.path.dirname(os.path.realpath(__file__))
-logger = logging.getLogger("FPLbot")
-logger.setLevel(logging.INFO)
-logging.basicConfig()
+logger = create_logger()
 
 
 class FPLBot:
