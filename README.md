@@ -18,8 +18,12 @@ Python 3.6+.
     git clone git@github.com:amosbastian/FPLbot.git
     cd FPLbot
     pip install -r requirements.txt
+    
+To initialise the database you should do the following:
 
-Once installed you can schedule a cron job to run the bot whenever you want!
+    python FPLbot/utils.py
+
+Once this has been done, you can schedule a cron job to run the bot whenever you want!
 
 ## Configuration
 
