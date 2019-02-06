@@ -87,4 +87,10 @@ async def main(config):
 
 if __name__ == "__main__":
     config = json.loads(open(f"{dirname}/../config.json").read())
-    asyncio.run(main(config))
+    try:
+        asyncio.run(main(config))
+    except AttributeError:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main(config))
+        loop.close()
+

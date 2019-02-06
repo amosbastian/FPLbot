@@ -71,4 +71,10 @@ def get_player_table(players, risers=True):
 
 
 if __name__ == "__main__":
-    asyncio.run(update_players())
+    try:
+        asyncio.run(update_players())
+    except AttributeError:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(update_players())
+        loop.close()
+
