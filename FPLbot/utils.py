@@ -11,7 +11,7 @@ from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
-from constants import understat_to_fpl
+from constants import understat_to_fpl, desired_attributes
 
 client = MongoClient()
 database = client.fpl
@@ -54,6 +54,7 @@ async def understat_players_data(session):
     """Returns a dict containing general player data retrieved from
     https://understat.com/.
     """
+    logger.info("Getting Understat players data.")
     html = await fetch(session, "https://understat.com/league/EPL/")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -80,6 +81,7 @@ async def understat_matches_data(session, player):
     """Sets the 'matches' attribute of the given player to the data found on
     https://understat.com/player/<player_id>.
     """
+    logger.info(f"Getting {player['player_name']} Understat matches data.")
     html = await fetch(session, f"https://understat.com/player/{player['id']}")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -96,15 +98,17 @@ async def understat_matches_data(session, player):
         byte_data = codecs.escape_decode(match.group(1))
         matches_data = json.loads(byte_data[0].decode("utf-8"))
 
-        player["matches"] = matches_data
+        player["understat_history"] = matches_data
     except UnboundLocalError:
-        player["matches"] = {}
+        player["understat_history"] = {}
 
 
-async def understat_players():
+async def get_understat_players():
     """Returns a list of dicts containing all information available on
     https://understat.com/ for Premier League players.
     """
+    logger.info("Retrieving player information from https://understat.com/.")
+
     async with aiohttp.ClientSession() as session:
         players_data = await understat_players_data(session)
         tasks = [asyncio.ensure_future(understat_matches_data(session, player))
@@ -119,6 +123,25 @@ async def update_players():
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)
+
+    understat_players = await get_understat_players()
+
+    for player in players:
+        fpl_name = f"{player['first_name']} {player['second_name']}"
+        try:
+            understat_player = next(
+                understat_player for understat_player in understat_players
+                if fpl_name == understat_player["player_name"])
+        except StopIteration:
+            # FPL player not available on Understat
+            continue
+
+        # Only update FPL player with desired attributes
+        understat_attributes = {
+            attribute: value for attribute, value in understat_player.items()
+            if attribute in desired_attributes
+        }
+        player.update(understat_attributes)
 
     requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
                 for player in players]
