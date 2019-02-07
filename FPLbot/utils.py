@@ -11,7 +11,7 @@ from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
-from constants import understat_to_fpl, desired_attributes
+from constants import player_dict, team_dict, desired_attributes
 
 client = MongoClient()
 database = client.fpl
@@ -71,8 +71,8 @@ async def understat_players_data(session):
 
     # Convert Understat player name to FPL player name
     for player in player_data:
-        if player["player_name"] in understat_to_fpl.keys():
-            player["player_name"] = understat_to_fpl[player["player_name"]]
+        player["team_title"] = understat_team_converter(player["team_title"])
+        player["player_name"] = understat_player_converter(player["player_name"])
 
     return player_data
 
@@ -166,6 +166,20 @@ def get_player_table(players, risers=True):
             for player in players])
 
     return table_header + table_body
+
+
+def understat_player_converter(player_name):
+    try:
+        return player_dict[player_name]
+    except KeyError:
+        return player_name
+
+
+def understat_team_converter(team_name):
+    try:
+        return team_dict[team_name]
+    except KeyError:
+        return team_name
 
 
 if __name__ == "__main__":

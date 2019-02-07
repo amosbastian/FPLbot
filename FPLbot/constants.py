@@ -1,4 +1,6 @@
-understat_to_fpl = {
+import re
+
+player_dict = {
     "Fred": "Frederico Rodrigues de Paula Santos",
     "Ki Sung-yueng": "Sung-yueng Ki",
     "Solly March": "Solomon March",
@@ -57,14 +59,23 @@ understat_to_fpl = {
     "Willian": "Willian Borges Da Silva",
 }
 
+team_dict = {
+    "Manchester City": "Man City",
+    "Tottenham": "Spurs",
+    "Manchester United": "Man Utd",
+    "Wolverhampton Wanderers": "Wolves"
+}
+
 desired_attributes = [
-  "xG",
-  "xA",
-  "key_passes",
-  "npg",
-  "npxG",
-  "xGChain",
-  "xGBuildup",
-  "shots",
-  "understat_history"
+    "xG",
+    "xA",
+    "key_passes",
+    "npg",
+    "npxG",
+    "xGChain",
+    "xGBuildup",
+    "shots",
+    "understat_history"
 ]
+
+versus_pattern = re.compile(r"!fplbot\s+([^\W\d_]+)\s+(?:vs.|vs)\s+([a-zA-Z ]+)")
