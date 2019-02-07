@@ -50,12 +50,11 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def understat_general_player_data():
+async def understat_players_data(session):
     """Returns a dict containing general player data retrieved from
     https://understat.com/.
     """
-    async with aiohttp.ClientSession() as session:
-        html = await fetch(session, "https://understat.com/league/EPL/")
+    html = await fetch(session, "https://understat.com/league/EPL/")
 
     soup = BeautifulSoup(html, "html.parser")
     scripts = soup.find_all("script")
@@ -75,6 +74,44 @@ async def understat_general_player_data():
             player["player_name"] = understat_to_fpl[player["player_name"]]
 
     return player_data
+
+
+async def understat_matches_data(session, player):
+    """Sets the 'matches' attribute of the given player to the data found on
+    https://understat.com/player/<player_id>.
+    """
+    html = await fetch(session, f"https://understat.com/player/{player['id']}")
+
+    soup = BeautifulSoup(html, "html.parser")
+    scripts = soup.find_all("script")
+    pattern = re.compile(r"var\s+matchesData\s+=\s+JSON.parse\(\'(.*?)\'\);")
+
+    for script in scripts:
+        match = re.search(pattern, script.string)
+        if match:
+            break
+
+    # If no match could be found, simply return an empty dict
+    try:
+        byte_data = codecs.escape_decode(match.group(1))
+        matches_data = json.loads(byte_data[0].decode("utf-8"))
+
+        player["matches"] = matches_data
+    except UnboundLocalError:
+        player["matches"] = {}
+
+
+async def understat_players():
+    """Returns a list of dicts containing all information available on
+    https://understat.com/ for Premier League players.
+    """
+    async with aiohttp.ClientSession() as session:
+        players_data = await understat_players_data(session)
+        tasks = [asyncio.ensure_future(understat_matches_data(session, player))
+                 for player in players_data]
+        await asyncio.gather(*tasks)
+
+    return players_data
 
 
 async def update_players():
