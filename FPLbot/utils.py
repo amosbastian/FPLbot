@@ -11,6 +11,8 @@ from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
+from constants import understat_to_fpl
+
 client = MongoClient()
 database = client.fpl
 logger = logging.getLogger("FPLbot")
@@ -66,6 +68,11 @@ async def understat_general_player_data():
 
     byte_data = codecs.escape_decode(match.group(1))
     player_data = json.loads(byte_data[0].decode("utf-8"))
+
+    # Convert Understat player name to FPL player name
+    for player in player_data:
+        if player["player_name"] in understat_to_fpl.keys():
+            player["player_name"] = understat_to_fpl[player["player_name"]]
 
     return player_data
 
