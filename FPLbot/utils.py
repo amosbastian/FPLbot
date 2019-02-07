@@ -1,8 +1,12 @@
 import asyncio
+import codecs
+import json
 import logging
 import os
+import re
 
 import aiohttp
+from bs4 import BeautifulSoup
 from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
@@ -37,6 +41,33 @@ def create_logger():
     logger.addHandler(fh)
     logger.addHandler(ch)
     return logger
+
+
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.text()
+
+
+async def understat_general_player_data():
+    """Returns a dict containing general player data retrieved from
+    https://understat.com/.
+    """
+    async with aiohttp.ClientSession() as session:
+        html = await fetch(session, "https://understat.com/league/EPL/")
+
+    soup = BeautifulSoup(html, "html.parser")
+    scripts = soup.find_all("script")
+    pattern = re.compile(r"var\s+playersData\s+=\s+JSON.parse\(\'(.*?)\'\);")
+
+    for script in scripts:
+        match = re.search(pattern, script.string)
+        if match:
+            break
+
+    byte_data = codecs.escape_decode(match.group(1))
+    player_data = json.loads(byte_data[0].decode("utf-8"))
+
+    return player_data
 
 
 async def update_players():
@@ -77,4 +108,3 @@ if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(update_players())
         loop.close()
-
