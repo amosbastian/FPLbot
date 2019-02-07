@@ -98,6 +98,10 @@ async def understat_matches_data(session, player):
         byte_data = codecs.escape_decode(match.group(1))
         matches_data = json.loads(byte_data[0].decode("utf-8"))
 
+        for fixture in matches_data:
+            fixture["h_team"] = understat_team_converter(fixture["h_team"])
+            fixture["a_team"] = understat_team_converter(fixture["a_team"])
+
         player["understat_history"] = matches_data
     except UnboundLocalError:
         player["understat_history"] = {}
