@@ -56,3 +56,15 @@ understat_to_fpl = {
     "Lucas Moura": "Lucas Rodrigues Moura da Silva",
     "Willian": "Willian Borges Da Silva",
 }
+
+desired_attributes = [
+  "xG",
+  "xA",
+  "key_passes",
+  "npg",
+  "npxG",
+  "xGChain",
+  "xGBuildup",
+  "shots",
+  "understat_history"
+]
