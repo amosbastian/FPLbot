@@ -109,7 +109,7 @@ class FPLBot:
                 f"|{float(fixture['xG']):.2f}"
                 f"|{fixture['assists']}"
                 f"|{float(fixture['xA']):.2f}"
-                f"|{float(fixture['npg']):.2f}"
+                f"|{fixture['npg']}"
                 f"|{float(fixture['npxG']):.2f}"
                 f"|{fixture['key_passes']}|\n"
             )
@@ -119,7 +119,6 @@ class FPLBot:
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
         player = self.database.players.find_one({"$text": {"$search": player_name}})
-
         if not number_of_fixtures:
             number_of_fixtures = len(player["understat_history"])
 
