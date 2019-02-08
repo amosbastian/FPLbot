@@ -78,4 +78,4 @@ desired_attributes = [
     "understat_history"
 ]
 
-versus_pattern = re.compile(r"!fplbot\s+([^\W\d_]+)\s+(?:vs.|vs)\s+([a-zA-Z ]+)")
+versus_pattern = re.compile(r"!fplbot\s+([^\W\d_]+)\s+(?:vs.|vs)\s+([a-zA-Z ]+)(\d+)?")
