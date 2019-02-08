@@ -94,7 +94,7 @@ async def understat_matches_data(session, player):
         if match:
             break
 
-    # If no match could be found, simply return an empty dict
+    # If no match could be found, retry (probably rate limited?)
     try:
         byte_data = codecs.escape_decode(match.group(1))
         matches_data = json.loads(byte_data[0].decode("utf-8"))
@@ -105,7 +105,9 @@ async def understat_matches_data(session, player):
 
         player["understat_history"] = matches_data
     except UnboundLocalError:
-        player["understat_history"] = {}
+        await understat_matches_data(session, player)
+
+    return player
 
 
 async def get_understat_players():
@@ -118,9 +120,9 @@ async def get_understat_players():
         players_data = await understat_players_data(session)
         tasks = [asyncio.ensure_future(understat_matches_data(session, player))
                  for player in players_data]
-        await asyncio.gather(*tasks)
+        players = await asyncio.gather(*tasks)
 
-    return players_data
+    return players
 
 
 async def update_players():
@@ -129,30 +131,26 @@ async def update_players():
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)
 
+    requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
+                for player in players]
+
+    logger.info("Updating FPL players in database.")
+    database.players.bulk_write(requests)
+
     understat_players = await get_understat_players()
 
-    for player in players:
-        fpl_name = f"{player['first_name']} {player['second_name']}"
-        try:
-            understat_player = next(
-                understat_player for understat_player in understat_players
-                if fpl_name == understat_player["player_name"])
-        except StopIteration:
-            # FPL player not available on Understat
-            continue
-
+    logger.info("Adding Understat data to players in database.")
+    for understat_player in understat_players:
         # Only update FPL player with desired attributes
         understat_attributes = {
             attribute: value for attribute, value in understat_player.items()
             if attribute in desired_attributes
         }
-        player.update(understat_attributes)
 
-    requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
-                for player in players]
-
-    logger.info("Updating players in database.")
-    database.players.bulk_write(requests)
+        player = database.players.find_one_and_update(
+            {"$text": {"$search": understat_player["player_name"]}},
+            {"$set": understat_attributes}
+        )
 
 
 def get_player_table(players, risers=True):
