@@ -16,11 +16,12 @@ from utils import create_logger, get_player_table, to_fpl_team, update_players
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
+client = MongoClient()
 
 
 class FPLBot:
     def __init__(self, config, session):
-        self.client = MongoClient()
+        self.database = client.fpl
         self.fpl = FPL(session)
         self.reddit = praw.Reddit(
             client_id=config.get("CLIENT_ID"),
@@ -36,7 +37,7 @@ class FPLBot:
         """
         logger.info("Retrieving risers and fallers.")
         new_players = await self.fpl.get_players(include_summary=True)
-        old_players = [player for player in self.client.fpl.players.find()]
+        old_players = [player for player in self.database.players.find()]
 
         risers = []
         fallers = []
@@ -79,82 +80,78 @@ class FPLBot:
         self.subreddit.submit(post_title, selftext=post_body)
         await update_players()
 
+    def player_vs_team_table(self, fixtures):
+        """Returns a Markdown table showing the player's performance in the
+        given fixtures.
+        """
+        table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
+                 "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
 
-def player_vs_team_table(fixtures):
-    """Returns a Markdown table showing the player's performance in the given
-    fixtures.
-    """
-    table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
-             "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
+        for fixture in fixtures:
+            home_team = f"{fixture['h_team']} {fixture['h_goals']}"
+            away_team = f"{fixture['a_goals']} {fixture['a_team']}"
 
-    for fixture in fixtures:
-        home_team = f"{fixture['h_team']} {fixture['h_goals']}"
-        away_team = f"{fixture['a_goals']} {fixture['a_team']}"
+            # Highlight the winning team
+            if int(fixture["h_goals"]) > int(fixture["a_goals"]):
+                home_team = f"**{home_team}**"
+            elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
+                away_team = f"**{away_team}**"
 
-        # Highlight the winning team
-        if int(fixture["h_goals"]) > int(fixture["a_goals"]):
-            home_team = f"**{home_team}**"
-        elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
-            away_team = f"**{away_team}**"
+            # Highlight whether the player was a starter or not
+            if fixture["position"].lower() != "sub":
+                fixture["time"] = f"**{fixture['time']}**"
 
-        # Highlight whether the player was a starter or not
-        if fixture["position"].lower() != "sub":
-            fixture["time"] = f"**{fixture['time']}**"
+            table += (
+                f"|{home_team}-{away_team}"
+                f"|{fixture['date']}"
+                f"|{fixture['time']}"
+                f"|{fixture['goals']}"
+                f"|{float(fixture['xG']):.2f}"
+                f"|{fixture['assists']}"
+                f"|{float(fixture['xA']):.2f}"
+                f"|{float(fixture['npg']):.2f}"
+                f"|{float(fixture['npxG']):.2f}"
+                f"|{fixture['key_passes']}|\n"
+            )
 
-        table += (
-            f"|{home_team}-{away_team}"
-            f"|{fixture['date']}"
-            f"|{fixture['time']}"
-            f"|{fixture['goals']}"
-            f"|{float(fixture['xG']):.2f}"
-            f"|{fixture['assists']}"
-            f"|{float(fixture['xA']):.2f}"
-            f"|{float(fixture['npg']):.2f}"
-            f"|{float(fixture['npxG']):.2f}"
-            f"|{fixture['key_passes']}|\n"
-        )
+        return table
 
-    return table
+    def versus_team_handler(self, player_name, team_name, number_of_fixtures):
+        """Function for handling player vs. team comment."""
+        player = self.database.players.find_one({"$text": {"$search": player_name}})
 
+        if not number_of_fixtures:
+            number_of_fixtures = len(player["understat_history"])
 
-def versus_team_handler(player_name, team_name, number_of_fixtures):
-    """Function for handling player vs. team comment."""
-    client = MongoClient()
-    player = client.fpl.players.find_one({"$text": {"$search": player_name}})
+        fixture_count = 0
+        relevant_fixtures = []
+        for fixture in player["understat_history"]:
+            if fixture_count >= int(number_of_fixtures):
+                break
 
-    if not number_of_fixtures:
-        number_of_fixtures = len(player["understat_history"])
+            if (team_name != fixture["h_team"].lower() and
+                    team_name != fixture["a_team"].lower()):
+                continue
 
-    fixture_count = 0
-    relevant_fixtures = []
-    for fixture in player["understat_history"]:
-        if fixture_count >= int(number_of_fixtures):
-            break
+            fixture_count += 1
+            relevant_fixtures.append(fixture)
 
-        if (team_name != fixture["h_team"].lower() and
-                team_name != fixture["a_team"].lower()):
-            continue
+        table = self.player_vs_team_table(relevant_fixtures)
+        print(table)
 
-        fixture_count += 1
-        relevant_fixtures.append(fixture)
+    def comment_handler(self, comment):
+        """Generic comment handler."""
+        match = re.search(versus_pattern, comment)
 
-    table = player_vs_team_table(relevant_fixtures)
-    print(table)
+        if not match:
+            return
 
+        player_name = match.group(1).lower().strip()
+        opponent_name = match.group(2).lower().replace(".", "").strip()
+        number = match.group(3)
 
-def comment_handler(comment):
-    """Generic comment handler."""
-    match = re.search(versus_pattern, comment)
-
-    if not match:
-        return
-
-    player_name = match.group(1).lower().strip()
-    opponent_name = match.group(2).lower().replace(".", "").strip()
-    number = match.group(3)
-
-    if to_fpl_team(opponent_name) in fpl_team_names:
-        versus_team_handler(player_name, opponent_name, number)
+        if to_fpl_team(opponent_name) in fpl_team_names:
+            self.versus_team_handler(player_name, opponent_name, number)
 
 
 async def main(config):
