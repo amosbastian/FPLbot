@@ -118,7 +118,13 @@ class FPLBot:
 
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
-        player = self.database.players.find_one({"$text": {"$search": player_name}})
+        # Find most relevant player using text search
+        players = self.database.players.find(
+            {"$text": {"$search": player_name}},
+            {"score": {"$meta": "textScore"}}
+        ).sort([("score", {"$meta": "textScore"})])
+        player = list(players.limit(1))[0]
+
         if not number_of_fixtures:
             number_of_fixtures = len(player["understat_history"])
 
@@ -157,7 +163,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        await fpl_bot.post_price_changes()
+        fpl_bot.comment_handler("!fplbot mohamed salah vs. bournemouth")
 
 
 if __name__ == "__main__":
