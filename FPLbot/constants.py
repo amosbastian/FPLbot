@@ -78,7 +78,7 @@ desired_attributes = [
     "understat_history"
 ]
 
-versus_pattern = re.compile(r"!fplbot\s+([^\W\d_]+(?:\s[^\W\d_]+)?)\s+(?:vs.|vs)\s+([a-zA-Z ]+)(\d+)?")
+versus_pattern = re.compile(r"!fplbot\s+([^\W\d]+(?:[\s-][^\W\d]+)*)\s+(?:vs.|vs)\s+([a-zA-Z ]+)(\d+)?")
 
 to_fpl_team_dict = {
     "arsenal fc": "arsenal",
