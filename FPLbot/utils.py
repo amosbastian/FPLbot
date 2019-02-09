@@ -127,28 +127,37 @@ async def get_understat_players():
 
 async def update_players():
     """Updates all players in the database."""
+    logger.info("Updating FPL players in database.")
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)
+        for player in players:
+            player["team"] = team_converter(player["team"])
 
     requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
                 for player in players]
-
-    logger.info("Updating FPL players in database.")
     database.players.bulk_write(requests)
 
+    logger.info("Adding Understat data to players in database.")
     understat_players = await get_understat_players()
 
-    logger.info("Adding Understat data to players in database.")
-    for understat_player in understat_players:
+    for player in understat_players:
         # Only update FPL player with desired attributes
         understat_attributes = {
-            attribute: value for attribute, value in understat_player.items()
+            attribute: value for attribute, value in player.items()
             if attribute in desired_attributes
         }
 
-        player = database.players.find_one_and_update(
-            {"$text": {"$search": understat_player["player_name"]}},
+        # Use player's full name and team to try and find the correct player
+        search_string = f"{player['player_name']} {player['team_title']}"
+        players = database.players.find(
+            {"$text": {"$search": search_string}},
+            {"score": {"$meta": "textScore"}}
+        ).sort([("score", {"$meta": "textScore"})])
+        relevant_player = list(players)[0]
+
+        database.players.update_one(
+            {"id": relevant_player["id"]},
             {"$set": understat_attributes}
         )
 
