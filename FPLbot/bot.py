@@ -8,7 +8,7 @@ from datetime import datetime
 import aiohttp
 import praw
 from fpl import FPL
-from fpl.utils import position_converter, team_converter
+from fpl.utils import position_converter
 from pymongo import MongoClient
 
 from constants import fpl_team_names, versus_pattern
@@ -21,6 +21,7 @@ client = MongoClient()
 
 class FPLBot:
     def __init__(self, config, session):
+        self.config = config
         self.database = client.fpl
         self.fpl = FPL(session)
         self.reddit = praw.Reddit(
@@ -29,7 +30,7 @@ class FPLBot:
             password=config.get("PASSWORD"),
             user_agent=config.get("USER_AGENT"),
             username=config.get("USERNAME"))
-        self.subreddit = self.reddit.subreddit(config.get("SUBREDDIT"))
+        self.subreddit = self.reddit.subreddit(self.config.get("SUBREDDIT"))
 
     async def get_price_changers(self):
         """Returns a list of players whose price has changed since the last
@@ -123,13 +124,19 @@ class FPLBot:
             {"$text": {"$search": player_name}},
             {"score": {"$meta": "textScore"}}
         ).sort([("score", {"$meta": "textScore"})])
-        player = list(players.limit(1))[0]
+
+        try:
+            player = list(players.limit(1))[0]
+        except IndexError:
+            logger.error(f"Player {player_name} could not be found!")
+            return
 
         if not number_of_fixtures:
             number_of_fixtures = len(player["understat_history"])
 
         fixture_count = 0
         relevant_fixtures = []
+        team_name = to_fpl_team(team_name)
         for fixture in player["understat_history"]:
             if fixture_count >= int(number_of_fixtures):
                 break
@@ -141,14 +148,24 @@ class FPLBot:
             fixture_count += 1
             relevant_fixtures.append(fixture)
 
-        table = self.player_vs_team_table(relevant_fixtures)
-        print(table)
+        player_vs_team_table = self.player_vs_team_table(relevant_fixtures)
+        return player_vs_team_table
+
+    def add_comment_to_database(self, comment):
+        logger.info(f"Adding comment with ID {comment.id} to the database.")
+        self.database.comments.update_one(
+            {"comment_id": comment.id},
+            {"$set": {"comment_id": comment.id}},
+            upsert=True
+        )
 
     def comment_handler(self, comment):
         """Generic comment handler."""
-        match = re.search(versus_pattern, comment)
+        logger.info(f"Handling COMMENT with ID {comment.id}.")
+        match = re.search(versus_pattern, comment.body.lower())
 
         if not match:
+            logger.info(f"Comment with ID {comment.id} does not match pattern.")
             return
 
         player_name = match.group(1).lower().strip()
@@ -156,14 +173,40 @@ class FPLBot:
         number = match.group(3)
 
         if to_fpl_team(opponent_name) in fpl_team_names:
-            self.versus_team_handler(player_name, opponent_name, number)
+            reply_text = self.versus_team_handler(
+                player_name, opponent_name, number)
+        else:
+            return
+
+        if reply_text:
+            logger.info(f"Replying ({player_name} vs. {opponent_name}) to "
+                        f"comment with ID {comment.id}.")
+            comment.reply(reply_text)
+            self.add_comment_to_database(comment)
+
+    def is_new_comment(self, comment_id):
+        if self.database.comments.count_documents({"comment_id": comment_id}) < 1:
+            return True
+        return False
+
+    def run(self):
+        for comment in self.subreddit.stream.comments():
+            body = comment.body.lower()
+            if self.config.get("BOT_PREFIX") in body:
+                if not self.is_new_comment(comment.id):
+                    continue
+
+                try:
+                    self.comment_handler(comment)
+                except Exception as error:
+                    logger.error(f"Something went wrong: {error}")
 
 
 async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.comment_handler("!fplbot mohamed salah vs. bournemouth")
+        fpl_bot.run()
 
 
 if __name__ == "__main__":
