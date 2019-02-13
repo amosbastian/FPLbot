@@ -188,14 +188,14 @@ def player_vs_team_table(fixtures):
              "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
 
     for fixture in fixtures:
-        home_team = f"{fixture['h_team']} {fixture['h_goals']}"
-        away_team = f"{fixture['a_goals']} {fixture['a_team']}"
+        home_team = f"{fixture['h_team']}"
+        away_team = f"{fixture['a_goals']}"
 
         # Highlight the winning team
         if int(fixture["h_goals"]) > int(fixture["a_goals"]):
-            home_team = f"**{home_team}**"
+            home_team = f"**{home_team}** {fixture['h_goals']}"
         elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
-            away_team = f"**{away_team}**"
+            away_team = f"**{away_team}** {fixture['a_team']}"
 
         # Highlight whether the player was a starter or not
         if fixture["position"].lower() != "sub":
