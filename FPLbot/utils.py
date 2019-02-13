@@ -180,7 +180,7 @@ def get_player_table(players, risers=True):
     return table_header + table_body
 
 
-def player_vs_team_table( fixtures):
+def player_vs_team_table(fixtures):
     """Returns a Markdown table showing the player's performance in the
     given fixtures.
     """

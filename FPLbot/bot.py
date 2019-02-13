@@ -113,7 +113,14 @@ class FPLBot:
             fixture_count += 1
             relevant_fixtures.append(fixture)
 
-        return player_vs_team_table(relevant_fixtures)
+        post_template = open(f"{dirname}/../comment_template.md").read()
+        table_header = f"# {player_name.title()} vs. {team_name.title()}\n"
+        table_body = player_vs_team_table(relevant_fixtures)
+
+        return post_template.format(
+            comment_header=table_header,
+            comment_body=table_body
+        )
 
     def add_comment_to_database(self, comment):
         logger.info(f"Adding comment with ID {comment.id} to the database.")
