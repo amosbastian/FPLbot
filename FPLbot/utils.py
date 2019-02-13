@@ -217,6 +217,21 @@ def player_vs_team_table(fixtures):
     return table
 
 
+def find_player(player_name):
+    # Find most relevant player using text search
+    players = database.players.find(
+        {"$text": {"$search": player_name}},
+        {"score": {"$meta": "textScore"}}
+    ).sort([("score", {"$meta": "textScore"})])
+
+    try:
+        player = list(players.limit(1))[0]
+    except IndexError:
+        logger.error(f"Player {player_name} could not be found!")
+        return None
+    return player
+
+
 def to_fpl_team(team_name):
     try:
         return to_fpl_team_dict[team_name]
