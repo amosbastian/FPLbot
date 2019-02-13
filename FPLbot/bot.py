@@ -12,8 +12,8 @@ from fpl.utils import position_converter
 from pymongo import MongoClient
 
 from constants import fpl_team_names, versus_pattern
-from utils import (create_logger, get_player_table, player_vs_team_table,
-                   to_fpl_team, update_players)
+from utils import (create_logger, find_player, get_player_table,
+                   player_vs_team_table, to_fpl_team, update_players)
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
@@ -82,18 +82,33 @@ class FPLBot:
         self.subreddit.submit(post_title, selftext=post_body)
         await update_players()
 
+    def versus_player_handler(self, player_A_name, player_B_name,
+                              number_of_fixtures):
+        """Function for handling player vs. player comment."""
+        player_A = find_player(player_A_name)
+        player_B = find_player(player_B_name)
+
+        if not player_A or not player_B:
+            return
+
+        player_A_fixtures = player_A["understat_history"]
+        player_B_fixtures = player_B["understat_history"]
+
+        if not number_of_fixtures:
+            number_of_fixtures = max(len(player_A_fixtures), len(player_B_fixtures))
+
+        fixture_count = 0
+        relevant_fixtures = []
+        for fixtures in zip(player_A_fixtures, player_B_fixtures):
+            fixture_A = fixtures[0]
+            fixture_B = fixtures[1]
+
+            print(fixture_A, fixture_B)
+
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
-        # Find most relevant player using text search
-        players = self.database.players.find(
-            {"$text": {"$search": player_name}},
-            {"score": {"$meta": "textScore"}}
-        ).sort([("score", {"$meta": "textScore"})])
-
-        try:
-            player = list(players.limit(1))[0]
-        except IndexError:
-            logger.error(f"Player {player_name} could not be found!")
+        player = find_player(player_name)
+        if not player:
             return
 
         if not number_of_fixtures:
@@ -177,7 +192,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.run()
+        fpl_bot.versus_player_handler("pogba", "son", None)
 
 
 if __name__ == "__main__":
