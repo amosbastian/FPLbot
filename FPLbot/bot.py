@@ -12,7 +12,8 @@ from fpl.utils import position_converter
 from pymongo import MongoClient
 
 from constants import fpl_team_names, versus_pattern
-from utils import create_logger, get_player_table, to_fpl_team, update_players
+from utils import (create_logger, get_player_table, player_vs_team_table,
+                   to_fpl_team, update_players)
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
@@ -81,42 +82,6 @@ class FPLBot:
         self.subreddit.submit(post_title, selftext=post_body)
         await update_players()
 
-    def player_vs_team_table(self, fixtures):
-        """Returns a Markdown table showing the player's performance in the
-        given fixtures.
-        """
-        table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
-                 "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
-
-        for fixture in fixtures:
-            home_team = f"{fixture['h_team']} {fixture['h_goals']}"
-            away_team = f"{fixture['a_goals']} {fixture['a_team']}"
-
-            # Highlight the winning team
-            if int(fixture["h_goals"]) > int(fixture["a_goals"]):
-                home_team = f"**{home_team}**"
-            elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
-                away_team = f"**{away_team}**"
-
-            # Highlight whether the player was a starter or not
-            if fixture["position"].lower() != "sub":
-                fixture["time"] = f"**{fixture['time']}**"
-
-            table += (
-                f"|{home_team}-{away_team}"
-                f"|{fixture['date']}"
-                f"|{fixture['time']}"
-                f"|{fixture['goals']}"
-                f"|{float(fixture['xG']):.2f}"
-                f"|{fixture['assists']}"
-                f"|{float(fixture['xA']):.2f}"
-                f"|{fixture['npg']}"
-                f"|{float(fixture['npxG']):.2f}"
-                f"|{fixture['key_passes']}|\n"
-            )
-
-        return table
-
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
         # Find most relevant player using text search
@@ -148,8 +113,7 @@ class FPLBot:
             fixture_count += 1
             relevant_fixtures.append(fixture)
 
-        player_vs_team_table = self.player_vs_team_table(relevant_fixtures)
-        return player_vs_team_table
+        return player_vs_team_table(relevant_fixtures)
 
     def add_comment_to_database(self, comment):
         logger.info(f"Adding comment with ID {comment.id} to the database.")

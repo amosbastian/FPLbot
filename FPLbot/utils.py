@@ -180,6 +180,43 @@ def get_player_table(players, risers=True):
     return table_header + table_body
 
 
+def player_vs_team_table( fixtures):
+    """Returns a Markdown table showing the player's performance in the
+    given fixtures.
+    """
+    table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
+             "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
+
+    for fixture in fixtures:
+        home_team = f"{fixture['h_team']} {fixture['h_goals']}"
+        away_team = f"{fixture['a_goals']} {fixture['a_team']}"
+
+        # Highlight the winning team
+        if int(fixture["h_goals"]) > int(fixture["a_goals"]):
+            home_team = f"**{home_team}**"
+        elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
+            away_team = f"**{away_team}**"
+
+        # Highlight whether the player was a starter or not
+        if fixture["position"].lower() != "sub":
+            fixture["time"] = f"**{fixture['time']}**"
+
+        table += (
+            f"|{home_team}-{away_team}"
+            f"|{fixture['date']}"
+            f"|{fixture['time']}"
+            f"|{fixture['goals']}"
+            f"|{float(fixture['xG']):.2f}"
+            f"|{fixture['assists']}"
+            f"|{float(fixture['xA']):.2f}"
+            f"|{fixture['npg']}"
+            f"|{float(fixture['npxG']):.2f}"
+            f"|{fixture['key_passes']}|\n"
+        )
+
+    return table
+
+
 def to_fpl_team(team_name):
     try:
         return to_fpl_team_dict[team_name]
