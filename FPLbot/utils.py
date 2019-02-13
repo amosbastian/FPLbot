@@ -185,26 +185,28 @@ def player_vs_team_table(fixtures):
     given fixtures.
     """
     table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
-             "|:-|:-:|-:|-:|-:|-:|-:|-:|-:|-:|\n")
+             "|:-|:-|-:|-:|-:|-:|-:|-:|-:|-:|\n")
+
+    total = {}
 
     for fixture in fixtures:
-        home_team = f"{fixture['h_team']}"
-        away_team = f"{fixture['a_goals']}"
+        home_team = f"{fixture['h_team']} {fixture['h_goals']}"
+        away_team = f"{fixture['a_goals']} {fixture['a_team']}"
 
         # Highlight the winning team
         if int(fixture["h_goals"]) > int(fixture["a_goals"]):
-            home_team = f"**{home_team}** {fixture['h_goals']}"
+            home_team = f"**{fixture['h_team']}** {fixture['h_goals']}"
         elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
-            away_team = f"**{away_team}** {fixture['a_team']}"
+            away_team = f"**{fixture['a_goals']}** {fixture['a_team']}"
 
         # Highlight whether the player was a starter or not
         if fixture["position"].lower() != "sub":
-            fixture["time"] = f"**{fixture['time']}**"
+            minutes_played = f"**{fixture['time']}**"
 
         table += (
             f"|{home_team}-{away_team}"
             f"|{fixture['date']}"
-            f"|{fixture['time']}"
+            f"|{minutes_played}"
             f"|{fixture['goals']}"
             f"|{float(fixture['xG']):.2f}"
             f"|{fixture['assists']}"
@@ -214,7 +216,27 @@ def player_vs_team_table(fixtures):
             f"|{fixture['key_passes']}|\n"
         )
 
-    return table
+        for key, value in fixture.items():
+            total.setdefault(key, 0)
+            try:
+                total[key] += float(value)
+            except ValueError:
+                continue
+
+    # Add footer with totals
+    table_footer = (
+        f"|||**{int(total['time'])}**"
+        f"|**{int(total['goals'])}**"
+        f"|**{total['xG']:.2f}**"
+        f"|**{int(total['assists'])}**"
+        f"|**{total['xA']:.2f}**"
+        f"|**{total['npg']}**"
+        f"|**{total['npxG']:.2f}**"
+        f"|**{int(total['key_passes'])}**|\n"
+    )
+
+    print(table + table_footer)
+    return table + table_footer
 
 
 def find_player(player_name):
