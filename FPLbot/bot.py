@@ -13,7 +13,8 @@ from pymongo import MongoClient
 
 from constants import fpl_team_names, versus_pattern
 from utils import (create_logger, find_player, get_player_table,
-                   player_vs_team_table, to_fpl_team, update_players)
+                   player_vs_player_table, player_vs_team_table, to_fpl_team,
+                   update_players)
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
@@ -91,19 +92,22 @@ class FPLBot:
         if not player_A or not player_B:
             return
 
-        player_A_fixtures = player_A["understat_history"]
-        player_B_fixtures = player_B["understat_history"]
+        player_A_fixtures = [fixture for fixture in player_A["understat_history"]
+                             if to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
+                             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names]
+        player_B_fixtures = [fixture for fixture in player_B["understat_history"]
+                             if to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
+                             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names]
 
         if not number_of_fixtures:
             number_of_fixtures = max(len(player_A_fixtures), len(player_B_fixtures))
 
-        fixture_count = 0
-        relevant_fixtures = []
-        for fixtures in zip(player_A_fixtures, player_B_fixtures):
-            fixture_A = fixtures[0]
-            fixture_B = fixtures[1]
+        print(number_of_fixtures)
 
-            print(fixture_A, fixture_B)
+        fixtures = zip(player_A_fixtures[:number_of_fixtures],
+                       player_B_fixtures[:number_of_fixtures])
+
+        player_vs_player_table(fixtures)
 
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
@@ -192,7 +196,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.versus_player_handler("pogba", "son", None)
+        fpl_bot.versus_player_handler("pogba", "mohamed salah", 5)
 
 
 if __name__ == "__main__":
