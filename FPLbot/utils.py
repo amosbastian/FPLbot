@@ -11,8 +11,8 @@ from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
-from constants import (desired_attributes, player_dict, team_dict,
-                       to_fpl_team_dict)
+from constants import (desired_attributes, fpl_team_names, player_dict,
+                       team_dict, to_fpl_team_dict)
 
 client = MongoClient()
 database = client.fpl
@@ -209,12 +209,15 @@ def player_vs_player_table(fixtures):
         fixture_A = fixture[0]
         fixture_B = fixture[1]
 
+        minutes_played_A = fixture_A["time"]
+        minutes_played_B = fixture_B["time"]
+
         # Highlight whether the player was a starter or not
         if fixture_A["position"].lower() != "sub":
-            minutes_played_A = f"**{fixture_A['time']}**"
+            minutes_played_A = f"**{minutes_played_A}**"
 
         if fixture_B["position"].lower() != "sub":
-            minutes_played_B = f"**{fixture_B['time']}**"
+            minutes_played_B = f"**{minutes_played_B}**"
 
         table += (
             f"|{float(fixture_A['xA']):.2f}"
@@ -248,7 +251,7 @@ def player_vs_player_table(fixtures):
         f"|**{total_B['xA']:.2f}**|\n"
     )
 
-    print(table + table_footer)
+    return table + table_footer
 
 
 def player_vs_team_table(fixtures):
@@ -345,6 +348,13 @@ def understat_team_converter(team_name):
         return team_dict[team_name]
     except KeyError:
         return team_name
+
+
+def get_relevant_fixtures(player):
+    return [fixture for fixture in player["understat_history"]
+            if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
+            to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
+            int(fixture["time"]) > 0]
 
 
 if __name__ == "__main__":
