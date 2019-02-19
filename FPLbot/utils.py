@@ -310,7 +310,6 @@ def player_vs_team_table(fixtures):
         f"|**{int(total['key_passes'])}**|\n"
     )
 
-    print(table + table_footer)
     return table + table_footer
 
 
@@ -350,12 +349,24 @@ def understat_team_converter(team_name):
         return team_name
 
 
-def get_relevant_fixtures(player):
+def get_relevant_fixtures(player, team_name=None):
     """Return all fixtures that the player has played for his current team."""
-    return [fixture for fixture in player["understat_history"]
-            if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
+    fixtures = [
+        fixture for fixture in player["understat_history"]
+        if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
-            int(fixture["time"]) > 0]
+        int(fixture["time"]) > 0
+    ]
+    print(fixtures)
+    if team_name:
+        fixtures = [
+            fixture for fixture in fixtures
+            if team_name == fixture["h_team"].lower() or
+            team_name == fixture["a_team"].lower()
+        ]
+    print(fixtures)
+
+    return fixtures
 
 
 if __name__ == "__main__":
