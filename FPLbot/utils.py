@@ -11,8 +11,8 @@ from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
 
-from constants import (desired_attributes, player_dict, team_dict,
-                       to_fpl_team_dict)
+from constants import (desired_attributes, fpl_team_names, player_dict,
+                       team_dict, to_fpl_team_dict)
 
 client = MongoClient()
 database = client.fpl
@@ -125,6 +125,14 @@ async def get_understat_players():
     return players
 
 
+def create_text_indexes():
+    database.players.create_index([
+        ("web_name", "text"),
+        ("first_name", "text"),
+        ("second_name", "text")
+    ])
+
+
 async def update_players():
     """Updates all players in the database."""
     logger.info("Updating FPL players in database.")
@@ -137,6 +145,7 @@ async def update_players():
     requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
                 for player in players]
     database.players.bulk_write(requests)
+    create_text_indexes()
 
     logger.info("Adding Understat data to players in database.")
     understat_players = await get_understat_players()
@@ -180,6 +189,145 @@ def get_player_table(players, risers=True):
     return table_header + table_body
 
 
+def get_total(total, fixture):
+    for key, value in fixture.items():
+        total.setdefault(key, 0)
+        try:
+            total[key] += float(value)
+        except ValueError:
+            continue
+    return total
+
+
+def player_vs_player_table(fixtures):
+    table = ("|xA|A|xG|G|MP|Fixture|Fixture|MP|G|xG|A|xA|\n"
+             "|-:|-:|-:|-:|-:|:-|-:|-:|-:|-:|-:|-:|\n")
+
+    total_A = {}
+    total_B = {}
+    for fixture in fixtures:
+        fixture_A = fixture[0]
+        fixture_B = fixture[1]
+
+        minutes_played_A = fixture_A["time"]
+        minutes_played_B = fixture_B["time"]
+
+        # Highlight whether the player was a starter or not
+        if fixture_A["position"].lower() != "sub":
+            minutes_played_A = f"**{minutes_played_A}**"
+
+        if fixture_B["position"].lower() != "sub":
+            minutes_played_B = f"**{minutes_played_B}**"
+
+        table += (
+            f"|{float(fixture_A['xA']):.2f}"
+            f"|{fixture_A['assists']}"
+            f"|{float(fixture_A['xG']):.2f}"
+            f"|{fixture_A['goals']}"
+            f"|{minutes_played_A}"
+            f"|{fixture_A['h_team']} {fixture_A['h_goals']}-"
+            f"{fixture_A['a_goals']} {fixture_A['a_team']}"
+            f"|{fixture_B['h_team']} {fixture_B['h_goals']}-"
+            f"{fixture_B['a_goals']} {fixture_B['a_team']}"
+            f"|{minutes_played_B}"
+            f"|{fixture_B['goals']}"
+            f"|{float(fixture_B['xG']):.2f}"
+            f"|{fixture_B['assists']}"
+            f"|{float(fixture_B['xA']):.2f}|\n"
+        )
+        total_A = get_total(total_A, fixture_A)
+        total_B = get_total(total_B, fixture_B)
+
+    table_footer = (
+        f"|**{total_A['xA']:.2f}**"
+        f"|**{int(total_A['assists'])}**"
+        f"|**{total_A['xG']:.2f}**"
+        f"|**{int(total_A['goals'])}**"
+        f"|**{int(total_A['time'])}**||"
+        f"|**{int(total_B['time'])}**"
+        f"|**{int(total_B['goals'])}**"
+        f"|**{total_B['xG']:.2f}**"
+        f"|**{int(total_B['assists'])}**"
+        f"|**{total_B['xA']:.2f}**|\n"
+    )
+
+    return table + table_footer
+
+
+def player_vs_team_table(fixtures):
+    """Returns a Markdown table showing the player's performance in the
+    given fixtures.
+    """
+    table = ("|Fixture|Date|MP|G|xG|A|xA|NPG|NPxG|KP|\n"
+             "|:-|:-|-:|-:|-:|-:|-:|-:|-:|-:|\n")
+
+    total = {}
+
+    for fixture in fixtures:
+        home_team = f"{fixture['h_team']} {fixture['h_goals']}"
+        away_team = f"{fixture['a_goals']} {fixture['a_team']}"
+        minutes_played = fixture["time"]
+
+        # Highlight the winning team
+        if int(fixture["h_goals"]) > int(fixture["a_goals"]):
+            home_team = f"**{fixture['h_team']}** {fixture['h_goals']}"
+        elif int(fixture["h_goals"]) < int(fixture["a_goals"]):
+            away_team = f"**{fixture['a_goals']}** {fixture['a_team']}"
+
+        # Highlight whether the player was a starter or not
+        if fixture["position"].lower() != "sub":
+            minutes_played = f"**{minutes_played}**"
+
+        table += (
+            f"|{home_team}-{away_team}"
+            f"|{fixture['date']}"
+            f"|{minutes_played}"
+            f"|{fixture['goals']}"
+            f"|{float(fixture['xG']):.2f}"
+            f"|{fixture['assists']}"
+            f"|{float(fixture['xA']):.2f}"
+            f"|{fixture['npg']}"
+            f"|{float(fixture['npxG']):.2f}"
+            f"|{fixture['key_passes']}|\n"
+        )
+
+        for key, value in fixture.items():
+            total.setdefault(key, 0)
+            try:
+                total[key] += float(value)
+            except ValueError:
+                continue
+
+    # Add footer with totals
+    table_footer = (
+        f"|||**{int(total['time'])}**"
+        f"|**{int(total['goals'])}**"
+        f"|**{total['xG']:.2f}**"
+        f"|**{int(total['assists'])}**"
+        f"|**{total['xA']:.2f}**"
+        f"|**{total['npg']}**"
+        f"|**{total['npxG']:.2f}**"
+        f"|**{int(total['key_passes'])}**|\n"
+    )
+
+    return table + table_footer
+
+
+def find_player(player_name):
+    # Find most relevant player using text search
+    players = database.players.find(
+        {"$text": {"$search": player_name}},
+        {"score": {"$meta": "textScore"}}
+    ).sort([("score", {"$meta": "textScore"})])
+
+    try:
+        player = list(players.limit(1))[0]
+    except IndexError:
+        logger.error(f"Player {player_name} could not be found!")
+        return None
+    return player
+
+
 def to_fpl_team(team_name):
     try:
         return to_fpl_team_dict[team_name]
@@ -199,6 +347,27 @@ def understat_team_converter(team_name):
         return team_dict[team_name]
     except KeyError:
         return team_name
+
+
+def get_relevant_fixtures(player, team_name=None):
+    """Return all fixtures that the player has played for his current team
+    (optionally) against the given team.
+    """
+    fixtures = [
+        fixture for fixture in player["understat_history"]
+        if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
+            to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
+        int(fixture["time"]) > 0
+    ]
+
+    if team_name:
+        fixtures = [
+            fixture for fixture in fixtures
+            if team_name == fixture["h_team"].lower() or
+            team_name == fixture["a_team"].lower()
+        ]
+
+    return fixtures
 
 
 if __name__ == "__main__":
