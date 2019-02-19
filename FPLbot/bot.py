@@ -14,7 +14,7 @@ from pymongo import MongoClient
 from constants import fpl_team_names, versus_pattern
 from utils import (create_logger, find_player, get_player_table,
                    player_vs_player_table, player_vs_team_table, to_fpl_team,
-                   update_players)
+                   update_players, get_relevant_fixtures)
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
@@ -92,22 +92,27 @@ class FPLBot:
         if not player_A or not player_B:
             return
 
-        player_A_fixtures = [fixture for fixture in player_A["understat_history"]
-                             if to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
-                             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names]
-        player_B_fixtures = [fixture for fixture in player_B["understat_history"]
-                             if to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
-                             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names]
+        player_A_fixtures = get_relevant_fixtures(player_A)
+        player_B_fixtures = get_relevant_fixtures(player_B)
 
         if not number_of_fixtures:
-            number_of_fixtures = max(len(player_A_fixtures), len(player_B_fixtures))
-
-        print(number_of_fixtures)
+            number_of_fixtures = max(len(player_A_fixtures),
+                                     len(player_B_fixtures))
 
         fixtures = zip(player_A_fixtures[:number_of_fixtures],
                        player_B_fixtures[:number_of_fixtures])
 
-        player_vs_player_table(fixtures)
+        post_template = open(f"{dirname}/../comment_template.md").read()
+        table_header = (
+            f"# {player_A['web_name']} (£{player_A['now_cost'] / 10.0:.1f}) "
+            f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
+            f"in their last {number_of_fixtures} fixtures")
+        table_body = player_vs_player_table(fixtures)
+
+        return post_template.format(
+            comment_header=table_header,
+            comment_body=table_body
+        )
 
     def versus_team_handler(self, player_name, team_name, number_of_fixtures):
         """Function for handling player vs. team comment."""
@@ -162,11 +167,15 @@ class FPLBot:
         opponent_name = match.group(2).lower().replace(".", "").strip()
         number = match.group(3)
 
+        if number:
+            number = int(number)
+
         if to_fpl_team(opponent_name) in fpl_team_names:
             reply_text = self.versus_team_handler(
                 player_name, opponent_name, number)
         else:
-            return
+            reply_text = self.versus_player_handler(
+                player_name, opponent_name, number)
 
         if reply_text:
             logger.info(f"Replying ({player_name} vs. {opponent_name}) to "
@@ -196,7 +205,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.versus_player_handler("pogba", "mohamed salah", 5)
+        fpl_bot.run()
 
 
 if __name__ == "__main__":
