@@ -125,6 +125,14 @@ async def get_understat_players():
     return players
 
 
+def create_text_indexes():
+    database.players.create_index([
+        ("web_name", "text"),
+        ("first_name", "text"),
+        ("second_name", "text")
+    ])
+
+
 async def update_players():
     """Updates all players in the database."""
     logger.info("Updating FPL players in database.")
@@ -137,6 +145,7 @@ async def update_players():
     requests = [ReplaceOne({"id": player["id"]}, player, upsert=True)
                 for player in players]
     database.players.bulk_write(requests)
+    create_text_indexes()
 
     logger.info("Adding Understat data to players in database.")
     understat_players = await get_understat_players()
