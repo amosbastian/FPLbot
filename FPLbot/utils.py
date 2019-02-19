@@ -350,7 +350,9 @@ def understat_team_converter(team_name):
 
 
 def get_relevant_fixtures(player, team_name=None):
-    """Return all fixtures that the player has played for his current team."""
+    """Return all fixtures that the player has played for his current team
+    (optionally) against the given team.
+    """
     fixtures = [
         fixture for fixture in player["understat_history"]
         if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or

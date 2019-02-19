@@ -106,7 +106,7 @@ class FPLBot:
         table_header = (
             f"# {player_A['web_name']} (£{player_A['now_cost'] / 10.0:.1f}) "
             f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
-            f"in their last {number_of_fixtures} fixtures")
+            f"(last {number_of_fixtures} fixtures)")
         table_body = player_vs_player_table(fixtures)
 
         return post_template.format(
@@ -123,23 +123,13 @@ class FPLBot:
         if not number_of_fixtures:
             number_of_fixtures = len(player["understat_history"])
 
-        fixture_count = 0
-        relevant_fixtures = []
-        team_name = to_fpl_team(team_name)
-        for fixture in player["understat_history"]:
-            if fixture_count >= int(number_of_fixtures):
-                break
-
-            if (team_name != fixture["h_team"].lower() and
-                    team_name != fixture["a_team"].lower()):
-                continue
-
-            fixture_count += 1
-            relevant_fixtures.append(fixture)
-
+        fixtures = get_relevant_fixtures(
+            player, team_name=to_fpl_team(team_name))[:number_of_fixtures]
         post_template = open(f"{dirname}/../comment_template.md").read()
-        table_header = f"# {player_name.title()} vs. {team_name.title()}\n"
-        table_body = player_vs_team_table(relevant_fixtures)
+        table_header = (
+            f"# {player_name.title()} vs. {team_name.title()} (last "
+            f"{len(fixtures)} fixtures)")
+        table_body = player_vs_team_table(fixtures)
 
         return post_template.format(
             comment_header=table_header,
