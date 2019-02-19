@@ -359,14 +359,13 @@ def get_relevant_fixtures(player, team_name=None):
             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
         int(fixture["time"]) > 0
     ]
-    print(fixtures)
+
     if team_name:
         fixtures = [
             fixture for fixture in fixtures
             if team_name == fixture["h_team"].lower() or
             team_name == fixture["a_team"].lower()
         ]
-    print(fixtures)
 
     return fixtures
 
