@@ -67,13 +67,14 @@ class FPLBot:
         risers_table = get_player_table(risers, True)
         fallers_table = get_player_table(fallers, False)
 
-        post_template = open(f"{dirname}/../post_template.md").read()
-        post_body = post_template.format(
-            risers_number=len(risers),
-            risers_table=risers_table,
-            fallers_number=len(fallers),
-            fallers_table=fallers_table
-        )
+        with open(f"{dirname}/../post_template.md", encoding="utf-8") as file:
+            post_template = file.read()
+            post_body = post_template.format(
+                risers_number=len(risers),
+                risers_table=risers_table,
+                fallers_number=len(fallers),
+                fallers_table=fallers_table
+            )
 
         today = datetime.now()
         current_date = f"({today:%B} {today.day}, {today.year})"
