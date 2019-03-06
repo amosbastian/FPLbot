@@ -40,17 +40,14 @@ class FPLBot:
         """
         logger.info("Retrieving risers and fallers.")
         new_players = await self.fpl.get_players(include_summary=True)
-        old_players = [player for player in self.database.players.find()]
 
         risers = []
         fallers = []
 
         for new_player in new_players:
-            try:
-                old_player = next(player for player in old_players
-                                  if player["id"] == new_player.id)
+            old_player = self.database.players.find_one({"id": new_player.id})
             # New player has been added to the game
-            except StopIteration:
+            if not old_player:
                 logger.info(f"New player added: {new_player}.")
                 continue
 
