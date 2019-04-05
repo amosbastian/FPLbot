@@ -367,6 +367,17 @@ def get_relevant_fixtures(player, team_name=None):
             team_name == fixture["a_team"].lower()
         ]
 
+        # Player probably played for the given team before, so only include
+        # fixtures played vs. them for his current team.
+        if len(fixtures) > 10:
+            fixtures = [
+                fixture for fixture in fixtures
+                if player["team"].lower() in [
+                    to_fpl_team(fixture["h_team"].lower()),
+                    to_fpl_team(fixture["a_team"].lower())
+                    ]
+                ]
+
     return fixtures
 
 
