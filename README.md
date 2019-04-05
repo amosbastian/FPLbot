@@ -8,7 +8,7 @@ Its current features are:
 
 * Posting the price changes of Fantasy Premier League players
 * Comparing the performance of a player vs. a team
-* Comparing the performance of a palyer vs. another player
+* Comparing the performance of a player vs. another player
 
 ## Installation
 
@@ -41,7 +41,7 @@ The bot can be called on [/r/FantasyPL](https://www.reddit.com/r/FantasyPL/) usi
 1. `!fplbot <player_name> vs. <team_name> <optional: number of fixtures>`
 2. `!fplbot <player_name> vs. <player_name> <optional: number of fixtures>`
 
-The bot uses text indexes to search for the player(s) and using a manually created mapping (so you don't have to use e.g. "man utd" exactly, but other variations are fine as well, like "man u" or "manchester united"). The number of fixtures is completely optional, and if not specified, it simply uses *all* fixtures that are considered relevant. Here are two examples:
+The bot uses text indexes to search for the player(s) and using a manually created mapping (so you don't have to use e.g. "man utd" exactly, but other variations are fine as well, like "man u" or "manchester united"). The number of fixtures is completely optional, and if not specified, it simply uses *all* fixtures that are considered relevant. All the data is taken from FPL's API & Understat. Here are two examples:
 
 1.
 
