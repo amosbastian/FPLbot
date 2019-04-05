@@ -94,7 +94,7 @@ class FPLBot:
         player_B_fixtures = get_relevant_fixtures(player_B)
 
         if not number_of_fixtures:
-            number_of_fixtures = max(len(player_A_fixtures),
+            number_of_fixtures = min(len(player_A_fixtures),
                                      len(player_B_fixtures))
 
         fixtures = zip(player_A_fixtures[:number_of_fixtures],
