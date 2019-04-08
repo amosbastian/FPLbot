@@ -199,59 +199,36 @@ def get_total(total, fixture):
     return total
 
 
-def player_vs_player_table(fixtures):
-    table = ("|xA|A|xG|G|MP|Fixture|Fixture|MP|G|xG|A|xA|\n"
-             "|-:|-:|-:|-:|-:|:-|-:|-:|-:|-:|-:|-:|\n")
+def create_player_table(player_name, fixtures):
+    table = (f"# {player_name}\n\n|Fixture|MP|G|xG|A|xA|\n"
+             "|:-|-:|-:|-:|-:|-:|\n")
+    total = {}
 
-    total_A = {}
-    total_B = {}
     for fixture in fixtures:
-        fixture_A = fixture[0]
-        fixture_B = fixture[1]
-
-        minutes_played_A = fixture_A["time"]
-        minutes_played_B = fixture_B["time"]
-
-        # Highlight whether the player was a starter or not
-        if fixture_A["position"].lower() != "sub":
-            minutes_played_A = f"**{minutes_played_A}**"
-
-        if fixture_B["position"].lower() != "sub":
-            minutes_played_B = f"**{minutes_played_B}**"
+        minutes_played = fixture["time"]
+        if fixture["position"].lower() != "sub":
+            minutes_played = f"**{minutes_played}**"
 
         table += (
-            f"|{float(fixture_A['xA']):.2f}"
-            f"|{fixture_A['assists']}"
-            f"|{float(fixture_A['xG']):.2f}"
-            f"|{fixture_A['goals']}"
-            f"|{minutes_played_A}"
-            f"|{fixture_A['h_team']} {fixture_A['h_goals']}-"
-            f"{fixture_A['a_goals']} {fixture_A['a_team']}"
-            f"|{fixture_B['h_team']} {fixture_B['h_goals']}-"
-            f"{fixture_B['a_goals']} {fixture_B['a_team']}"
-            f"|{minutes_played_B}"
-            f"|{fixture_B['goals']}"
-            f"|{float(fixture_B['xG']):.2f}"
-            f"|{fixture_B['assists']}"
-            f"|{float(fixture_B['xA']):.2f}|\n"
-        )
-        total_A = get_total(total_A, fixture_A)
-        total_B = get_total(total_B, fixture_B)
+            f"|{fixture['h_team']} {fixture['h_goals']}"
+            f"-{fixture['a_goals']} {fixture['a_team']}"
+            f"|{minutes_played}|{fixture['goals']}|{float(fixture['xG']):.2f}|"
+            f"{fixture['assists']}|{float(fixture['xA']):.2f}|\n")
 
-    table_footer = (
-        f"|**{total_A['xA']:.2f}**"
-        f"|**{int(total_A['assists'])}**"
-        f"|**{total_A['xG']:.2f}**"
-        f"|**{int(total_A['goals'])}**"
-        f"|**{int(total_A['time'])}**||"
-        f"|**{int(total_B['time'])}**"
-        f"|**{int(total_B['goals'])}**"
-        f"|**{total_B['xG']:.2f}**"
-        f"|**{int(total_B['assists'])}**"
-        f"|**{total_B['xA']:.2f}**|\n"
-    )
+        total = get_total(total, fixture)
 
-    return table + table_footer
+    table += (f"||**{total['time']}**|**{int(total['goals'])}**|"
+              f"**{float(total['xG']):.2f}**|**{int(total['assists'])}**|"
+              f"**{float(total['xA']):.2f}**|\n")
+
+    return table
+
+
+def player_vs_player_table(name_A, fixtures_A, name_B, fixtures_B):
+    player_A_table = create_player_table(name_A, fixtures_A)
+    player_B_table = create_player_table(name_B, fixtures_B)
+
+    return player_A_table + "\n\n" + player_B_table
 
 
 def player_vs_team_table(fixtures):
