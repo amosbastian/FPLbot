@@ -97,15 +97,15 @@ class FPLBot:
             number_of_fixtures = min(len(player_A_fixtures),
                                      len(player_B_fixtures))
 
-        fixtures = zip(player_A_fixtures[:number_of_fixtures],
-                       player_B_fixtures[:number_of_fixtures])
-
         post_template = open(f"{dirname}/../comment_template.md").read()
         table_header = (
             f"# {player_A['web_name']} (£{player_A['now_cost'] / 10.0:.1f}) "
             f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
-            f"(last {number_of_fixtures} fixtures)")
-        table_body = player_vs_player_table(fixtures)
+            f"(last {number_of_fixtures} fixtures)\n\n---")
+
+        table_body = player_vs_player_table(
+            player_A["web_name"], player_A_fixtures[:number_of_fixtures],
+            player_B["web_name"], player_B_fixtures[:number_of_fixtures])
 
         return post_template.format(
             comment_header=table_header,
@@ -193,7 +193,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.run()
+        print(fpl_bot.versus_player_handler("Aguero", "Mane", 5))
 
 
 if __name__ == "__main__":
