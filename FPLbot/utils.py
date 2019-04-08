@@ -185,6 +185,15 @@ async def update_results():
     database.results.bulk_write(requests)
 
 
+def get_xGA(fixture_id, player_team):
+    database_fixture = database.results.find_one({"id": fixture_id})
+    if database_fixture["h"]["title"] == player_team:
+        xGA = float(database_fixture["xG"]["a"])
+    else:
+        xGA = float(database_fixture["xG"]["h"])
+    return xGA
+
+
 def create_goalkeeper_table(player, history, fixtures):
     table = (f"# {player['web_name']}\n\n|Fixture|MP|GA|xGA|Saves|P|\n"
              "|:-|-:|-:|-:|-:|-:|-:|\n")
@@ -201,11 +210,7 @@ def create_goalkeeper_table(player, history, fixtures):
         if fixture["position"].lower() != "sub":
             minutes_played = f"**{minutes_played}**"
 
-        database_fixture = database.results.find_one({"id": fixture["id"]})
-        if database_fixture["h"]["title"] == player["team"]:
-            xGA = float(database_fixture["xG"]["a"])
-        else:
-            xGA = float(database_fixture["xG"]["h"])
+        xGA = get_xGA(fixture["id"], player["team"])
 
         table += (
             f"|{fixture['h_team']} {fixture['h_goals']}"
