@@ -5,15 +5,16 @@ import logging
 import os
 import re
 
-import aiohttp
-from bs4 import BeautifulSoup
 from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
-from understat import Understat
 
+import aiohttp
+from bs4 import BeautifulSoup
 from constants import (desired_attributes, fpl_team_names, player_dict,
                        team_dict, to_fpl_team_dict)
+from tabulate import tabulate
+from understat import Understat
 
 client = MongoClient()
 database = client.fpl
@@ -194,43 +195,40 @@ def get_xGA(fixture_id, player_team):
     return xGA
 
 
-def create_goalkeeper_table(player, history, fixtures):
-    table = (f"# {player['web_name']}\n\n|Fixture|MP|GA|xGA|Saves|P|\n"
-             "|:-|-:|-:|-:|-:|-:|-:|\n")
-    total = {}
-    total_points = 0
-    total_bonus = 0
-    total_conceded = 0
-    total_saves = 0
-    total_xGA = 0
-    total_minutes = 0
+def create_goalkeeper_table(player, history_list, fixtures):
+    table_body = []
+    total_result = []
 
-    for history, fixture in zip(history, fixtures[::-1]):
-        minutes_played = fixture["time"]
-        if fixture["position"].lower() != "sub":
-            minutes_played = f"**{minutes_played}**"
+    table_header = ["Fixture", "MP", "GA", "xGA", "Saves", "P", "BPS"]
 
+    for history, fixture in zip(history_list, fixtures[::-1]):
+        result = (f"{fixture['h_team']} {fixture['h_goals']}-"
+                  f"{fixture['a_goals']} {fixture['a_team']}")
         xGA = get_xGA(fixture["id"], player["team"])
+        table_row = [
+            result, int(fixture["time"]),  history["goals_conceded"],
+            float(f"{xGA:.2f}"), history['saves'], history['total_points'],
+            history['bonus']
+        ]
+        table_body.append(table_row)
+        total_result.append(table_row[1:])
+    table_footer = [''] + [sum(i) for i in zip(*total_result)]
 
-        table += (
-            f"|{fixture['h_team']} {fixture['h_goals']}"
-            f"-{fixture['a_goals']} {fixture['a_team']}"
-            f"|{minutes_played}|{history['goals_conceded']}|"
-            f"{xGA:.2f}|{history['saves']}|"
-            f"{history['total_points']} ({history['bonus']})|\n")
+    for i, value in enumerate(table_footer):
+        if value == "":
+            continue
 
-        total = get_total(total, fixture)
-        total_points += history['total_points']
-        total_bonus += history['bonus']
-        total_conceded += history['goals_conceded']
-        total_saves += history['saves']
-        total_xGA += xGA
-        total_minutes += int(fixture["time"])
+        if isinstance(value, float):
+            value = f"{value:.2f}"
 
-    table += (f"||**{total_minutes}**|**{total_conceded}**|**{total_xGA:.2f}**|"
-              f"**{total_saves}**|**{total_points} ({total_bonus})**|\n")
+        table_footer[i] = f"**{value}**"
 
-    return table
+    table_body.append(table_footer)
+    alignment = ("left", "right", "right", "right", "right", "right", "right")
+    table = tabulate(table_body, headers=table_header, tablefmt="pipe",
+                     colalign=alignment)
+
+    return f"# {player['web_name']}\n\n{table}"
 
 
 def get_player_table(players, risers=True):
