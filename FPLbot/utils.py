@@ -185,7 +185,7 @@ async def update_results():
     database.results.bulk_write(requests)
 
 
-def create_goalkeeper_table():
+def create_goalkeeper_table(player, history, fixtures):
     pass
 
 
@@ -217,12 +217,13 @@ def get_total(total, fixture):
     return total
 
 
-def create_player_table(player_name, history, fixtures):
-    table = (f"# {player_name}\n\n|Fixture|MP|G|xG|A|xA|P|\n"
+def create_player_table(player, history, fixtures):
+    table = (f"# {player['web_name']}\n\n|Fixture|MP|G|xG|A|xA|P|\n"
              "|:-|-:|-:|-:|-:|-:|-:|\n")
     total = {}
     total_points = 0
     total_bonus = 0
+    total_assists = 0
 
     for history, fixture in zip(history, fixtures[::-1]):
         minutes_played = fixture["time"]
@@ -233,15 +234,16 @@ def create_player_table(player_name, history, fixtures):
             f"|{fixture['h_team']} {fixture['h_goals']}"
             f"-{fixture['a_goals']} {fixture['a_team']}"
             f"|{minutes_played}|{fixture['goals']}|{float(fixture['xG']):.2f}|"
-            f"{fixture['assists']}|{float(fixture['xA']):.2f}|"
+            f"{history['assists']}|{float(fixture['xA']):.2f}|"
             f"{history['total_points']} ({history['bonus']})|\n")
 
         total = get_total(total, fixture)
         total_points += history['total_points']
         total_bonus += history['bonus']
+        total_assists += history['assists']
 
     table += (f"||**{total['time']}**|**{int(total['goals'])}**|"
-              f"**{float(total['xG']):.2f}**|**{int(total['assists'])}**|"
+              f"**{float(total['xG']):.2f}**|**{total_assists}**|"
               f"**{float(total['xA']):.2f}**|"
               f"**{total_points} ({total_bonus})**\n")
 
@@ -254,7 +256,7 @@ def player_vs_player_table(player_A, player_B, number_of_fixtures):
     for player in [player_A, player_B]:
         fixtures = get_relevant_fixtures(player)[:number_of_fixtures]
         history = get_relevant_history(player["history"])[-number_of_fixtures:]
-        table = create_player_table(player["web_name"], history, fixtures)
+        table = create_player_table(player, history, fixtures)
         tables.append(table)
 
     return tables[0] + "\n\n" + tables[1]
