@@ -4,4 +4,4 @@
 
 ---
 
-^Made ^by ^/u/esoemah. ^Source: ^https://github.com/amosbastian/FPLbot
+^Made ^by ^[esoemah](https://www.reddit.com/message/compose/?to=esoemah). ^Source: ^https://github.com/amosbastian/FPLbot
