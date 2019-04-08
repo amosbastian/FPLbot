@@ -201,8 +201,8 @@ def create_goalkeeper_table(player, history_list, fixtures):
     table_body = []
     total_result = []
 
-    table_header = ["Fixture", "MP", "GA", "xGA", "Saves", "PTS"]
-    alignment = ("left", "right", "right", "right", "right", "right", "right")
+    table_header = ["Fixture", "MP", "GA", "xGA", "Saves", "Points"]
+    alignment = ("left", "right", "right", "right", "right", "right")
 
     total_points = 0
     total_bonus = 0
@@ -215,12 +215,11 @@ def create_goalkeeper_table(player, history_list, fixtures):
 
         table_row = [
             result, int(fixture["time"]),  history["goals_conceded"],
-            f"{xGA:.2f}", history['saves'], history['total_points'],
-            history['bonus']
+            f"{xGA:.2f}", history['saves'], points
         ]
 
         table_body.append(table_row)
-        total_result.append(table_row[1:])
+        total_result.append(table_row[1:-1])
         total_points += history["total_points"]
         total_bonus += history["bonus"]
 
@@ -235,7 +234,7 @@ def create_goalkeeper_table(player, history_list, fixtures):
 
         table_footer[i] = f"**{value}**"
 
-    table_body.append([""] + table_footer)
+    table_body.append([""] + table_footer + [f"**{total_points} ({total_bonus})**"])
     table = tabulate(table_body, headers=table_header, tablefmt="pipe",
                      colalign=alignment)
 
@@ -276,7 +275,7 @@ def create_player_table(player, history_list, fixtures):
     table_body = []
     total_result = []
 
-    table_header = ["Fixture", "MP", "G", "xG", "A", "xA", "PTS"]
+    table_header = ["Fixture", "MP", "G", "xG", "A", "xA", "Points"]
     alignment = ("left", "right", "right", "right", "right", "right", "right")
 
     # If the player is a defender, also include GA and xGA
