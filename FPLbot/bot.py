@@ -90,9 +90,6 @@ class FPLBot:
         if not player_A or not player_B:
             return
 
-        player_A_fixtures = get_relevant_fixtures(player_A)
-        player_B_fixtures = get_relevant_fixtures(player_B)
-
         if not number_of_fixtures or number_of_fixtures > 10:
             number_of_fixtures = 10
 
@@ -102,9 +99,7 @@ class FPLBot:
             f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
             f"(last {number_of_fixtures} fixtures)\n\n---")
 
-        table_body = player_vs_player_table(
-            player_A["web_name"], player_A_fixtures[:number_of_fixtures],
-            player_B["web_name"], player_B_fixtures[:number_of_fixtures])
+        table_body = player_vs_player_table(player_A, player_B, number_of_fixtures)
 
         return post_template.format(
             comment_header=table_header,

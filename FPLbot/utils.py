@@ -185,6 +185,10 @@ async def update_results():
     database.results.bulk_write(requests)
 
 
+def create_goalkeeper_table():
+    pass
+
+
 def get_player_table(players, risers=True):
     """Returns the table used in the player price change posts on Reddit."""
     table_header = ("|Name|Team|Position|Ownership|Price|∆|Form|\n"
@@ -213,15 +217,18 @@ def get_total(total, fixture):
     return total
 
 
-def create_player_table(player_name, fixtures):
+def create_player_table(player_name, history, fixtures):
     table = (f"# {player_name}\n\n|Fixture|MP|G|xG|A|xA|\n"
              "|:-|-:|-:|-:|-:|-:|\n")
     total = {}
 
-    for fixture in fixtures:
+    print(player_name)
+    for i, fixture in enumerate(fixtures):
         minutes_played = fixture["time"]
         if fixture["position"].lower() != "sub":
             minutes_played = f"**{minutes_played}**"
+
+        print(f"vs. {team_converter(history[i]['opponent_team'])} {history[i]['team_h_score']}-{history[i]['team_a_score']}")
 
         table += (
             f"|{fixture['h_team']} {fixture['h_goals']}"
@@ -238,11 +245,16 @@ def create_player_table(player_name, fixtures):
     return table
 
 
-def player_vs_player_table(name_A, fixtures_A, name_B, fixtures_B):
-    player_A_table = create_player_table(name_A, fixtures_A)
-    player_B_table = create_player_table(name_B, fixtures_B)
+def player_vs_player_table(player_A, player_B, number_of_fixtures):
+    tables = []
 
-    return player_A_table + "\n\n" + player_B_table
+    for player in [player_A, player_B]:
+        fixtures = get_relevant_fixtures(player)[:number_of_fixtures]
+        history = player["history"][-number_of_fixtures:]
+        table = create_player_table(player["web_name"], history, fixtures)
+        tables.append(table)
+
+    return tables[0] + "\n\n" + tables[1]
 
 
 def player_vs_team_table(fixtures):
@@ -344,11 +356,13 @@ def get_relevant_fixtures(player, team_name=None):
     """Return all fixtures that the player has played for his current team
     (optionally) against the given team.
     """
+    fixture_ids = [result["id"] for result in database.results.find()]
+
     fixtures = [
         fixture for fixture in player["understat_history"]
         if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
-        int(fixture["time"]) > 0
+        int(fixture["time"]) > 0 and fixture["id"] in fixture_ids
     ]
 
     if team_name:
