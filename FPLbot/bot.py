@@ -99,7 +99,8 @@ class FPLBot:
             f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
             f"(last {number_of_fixtures} fixtures)\n\n---")
 
-        table_body = player_vs_player_table(player_A, player_B, number_of_fixtures)
+        players = [player_A, player_B]
+        table_body = player_vs_player_table(players, number_of_fixtures)
 
         return post_template.format(
             comment_header=table_header,

@@ -196,35 +196,46 @@ def get_xGA(fixture_id, player_team):
 
 
 def create_goalkeeper_table(player, history_list, fixtures):
+    """Returns a Markdown table for a goalkeeper."""
+
     table_body = []
     total_result = []
 
-    table_header = ["Fixture", "MP", "GA", "xGA", "Saves", "P", "BPS"]
+    table_header = ["Fixture", "MP", "GA", "xGA", "Saves", "PTS"]
+    alignment = ("left", "right", "right", "right", "right", "right", "right")
+
+    total_points = 0
+    total_bonus = 0
 
     for history, fixture in zip(history_list, fixtures[::-1]):
         result = (f"{fixture['h_team']} {fixture['h_goals']}-"
                   f"{fixture['a_goals']} {fixture['a_team']}")
+        points = f"{history['total_points']} ({history['bonus']})"
         xGA = get_xGA(fixture["id"], player["team"])
+
         table_row = [
             result, int(fixture["time"]),  history["goals_conceded"],
-            float(f"{xGA:.2f}"), history['saves'], history['total_points'],
+            f"{xGA:.2f}", history['saves'], history['total_points'],
             history['bonus']
         ]
+
         table_body.append(table_row)
         total_result.append(table_row[1:])
-    table_footer = [''] + [sum(i) for i in zip(*total_result)]
+        total_points += history["total_points"]
+        total_bonus += history["bonus"]
 
+    # List comprehension to sum the values of each of the table's columns
+    table_footer = [sum([float(j) if isinstance(j, str) else j for j in i])
+                    for i in zip(*total_result)]
+
+    # Bold the values in the table's footer
     for i, value in enumerate(table_footer):
-        if value == "":
-            continue
-
         if isinstance(value, float):
             value = f"{value:.2f}"
 
         table_footer[i] = f"**{value}**"
 
-    table_body.append(table_footer)
-    alignment = ("left", "right", "right", "right", "right", "right", "right")
+    table_body.append([""] + table_footer)
     table = tabulate(table_body, headers=table_header, tablefmt="pipe",
                      colalign=alignment)
 
@@ -259,49 +270,78 @@ def get_total(total, fixture):
     return total
 
 
-def create_player_table(player, history, fixtures):
-    table = (f"# {player['web_name']}\n\n|Fixture|MP|G|xG|A|xA|P|\n"
-             "|:-|-:|-:|-:|-:|-:|-:|\n")
-    total = {}
+def create_player_table(player, history_list, fixtures):
+    """Returns a Markdown table for players who aren't goalkeepers."""
+
+    table_body = []
+    total_result = []
+
+    table_header = ["Fixture", "MP", "G", "xG", "A", "xA", "PTS"]
+    alignment = ("left", "right", "right", "right", "right", "right", "right")
+
+    # If the player is a defender, also include GA and xGA
+    if player["element_type"] == 2:
+        table_header.insert(-1, "GA")
+        table_header.insert(-1, "xGA")
+        alignment = (*alignment, "right", "right")
+
     total_points = 0
     total_bonus = 0
-    total_assists = 0
 
-    for history, fixture in zip(history, fixtures[::-1]):
-        minutes_played = fixture["time"]
-        if fixture["position"].lower() != "sub":
-            minutes_played = f"**{minutes_played}**"
+    for history, fixture in zip(history_list, fixtures[::-1]):
+        result = (f"{fixture['h_team']} {fixture['h_goals']}-"
+                  f"{fixture['a_goals']} {fixture['a_team']}")
+        points = f"{history['total_points']} ({history['bonus']})"
 
-        table += (
-            f"|{fixture['h_team']} {fixture['h_goals']}"
-            f"-{fixture['a_goals']} {fixture['a_team']}"
-            f"|{minutes_played}|{fixture['goals']}|{float(fixture['xG']):.2f}|"
-            f"{history['assists']}|{float(fixture['xA']):.2f}|"
-            f"{history['total_points']} ({history['bonus']})|\n")
+        table_row = [
+            result, int(fixture["time"]), history["goals_scored"],
+            f"{float(fixture['xG']):.2f}", history["assists"],
+            f"{float(fixture['xA']):.2f}", points
+        ]
 
-        total = get_total(total, fixture)
-        total_points += history['total_points']
-        total_bonus += history['bonus']
-        total_assists += history['assists']
+        # Player is a defender, so add additional data
+        if player["element_type"] == 2:
+            xGA = get_xGA(fixture["id"], player["team"])
+            table_row.insert(-1, history["goals_conceded"])
+            table_row.insert(-1, float(f"{xGA:.2f}"))
 
-    table += (f"||**{total['time']}**|**{int(total['goals'])}**|"
-              f"**{float(total['xG']):.2f}**|**{total_assists}**|"
-              f"**{float(total['xA']):.2f}**|"
-              f"**{total_points} ({total_bonus})**\n")
+        table_body.append(table_row)
+        total_result.append(table_row[1:-1])
+        total_points += history["total_points"]
+        total_bonus += history["bonus"]
 
-    return table
+    # List comprehension to sum the values of each of the table's columns
+    table_footer = [sum([float(j) if isinstance(j, str) else j for j in i])
+                    for i in zip(*total_result)]
+
+    # Bold the values in the table's footer
+    for i, value in enumerate(table_footer):
+        if isinstance(value, float):
+            value = f"{value:.2f}"
+
+        table_footer[i] = f"**{value}**"
+
+    table_body.append([""] + table_footer + [f"**{total_points} ({total_bonus})**"])
+    table = tabulate(table_body, headers=table_header, tablefmt="pipe",
+                     colalign=alignment)
+
+    return f"# {player['web_name']}\n\n{table}"
 
 
-def player_vs_player_table(player_A, player_B, number_of_fixtures):
+def player_vs_player_table(players, number_of_fixtures):
+    """Creates tables from the given players."""
     tables = []
 
-    for player in [player_A, player_B]:
+    for player in players:
         fixtures = get_relevant_fixtures(player)[:number_of_fixtures]
         history = get_relevant_history(player["history"])[-number_of_fixtures:]
+
+        # Player is a goalkeeper
         if player["element_type"] == 1:
             table = create_goalkeeper_table(player, history, fixtures)
         else:
             table = create_player_table(player, history, fixtures)
+
         tables.append(table)
 
     return tables[0] + "\n\n" + tables[1]
