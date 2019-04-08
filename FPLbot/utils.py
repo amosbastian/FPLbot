@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from fpl import FPL
 from fpl.utils import position_converter, team_converter
 from pymongo import MongoClient, ReplaceOne
+from understat import Understat
 
 from constants import (desired_attributes, fpl_team_names, player_dict,
                        team_dict, to_fpl_team_dict)
@@ -169,6 +170,19 @@ async def update_players():
             {"id": relevant_player["id"]},
             {"$set": understat_attributes}
         )
+
+
+async def update_results():
+    async with aiohttp.ClientSession() as session:
+        understat = Understat(session)
+        results = await understat.get_league_results("EPL", 2018)
+        for result in results:
+            result["h"]["title"] = understat_team_converter(result["h"]["title"])
+            result["a"]["title"] = understat_team_converter(result["a"]["title"])
+
+    requests = [ReplaceOne({"id": result["id"]}, result, upsert=True)
+                for result in results]
+    database.results.bulk_write(requests)
 
 
 def get_player_table(players, risers=True):
