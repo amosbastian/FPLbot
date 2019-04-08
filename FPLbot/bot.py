@@ -90,12 +90,8 @@ class FPLBot:
         if not player_A or not player_B:
             return
 
-        player_A_fixtures = get_relevant_fixtures(player_A)
-        player_B_fixtures = get_relevant_fixtures(player_B)
-
-        if not number_of_fixtures:
-            number_of_fixtures = min(len(player_A_fixtures),
-                                     len(player_B_fixtures))
+        if not number_of_fixtures or number_of_fixtures > 10:
+            number_of_fixtures = 10
 
         post_template = open(f"{dirname}/../comment_template.md").read()
         table_header = (
@@ -103,9 +99,8 @@ class FPLBot:
             f"vs. {player_B['web_name']} (£{player_B['now_cost'] / 10.0:.1f}) "
             f"(last {number_of_fixtures} fixtures)\n\n---")
 
-        table_body = player_vs_player_table(
-            player_A["web_name"], player_A_fixtures[:number_of_fixtures],
-            player_B["web_name"], player_B_fixtures[:number_of_fixtures])
+        players = [player_A, player_B]
+        table_body = player_vs_player_table(players, number_of_fixtures)
 
         return post_template.format(
             comment_header=table_header,
@@ -118,8 +113,8 @@ class FPLBot:
         if not player:
             return
 
-        if not number_of_fixtures:
-            number_of_fixtures = len(player["understat_history"])
+        if not number_of_fixtures or number_of_fixtures > 10:
+            number_of_fixtures = 10
 
         fixtures = get_relevant_fixtures(
             player, team_name=to_fpl_team(team_name))[:number_of_fixtures]
@@ -193,7 +188,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        print(fpl_bot.versus_player_handler("Aguero", "Mane", 5))
+        fpl_bot.run()
 
 
 if __name__ == "__main__":
