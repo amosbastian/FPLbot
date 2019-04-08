@@ -218,29 +218,32 @@ def get_total(total, fixture):
 
 
 def create_player_table(player_name, history, fixtures):
-    table = (f"# {player_name}\n\n|Fixture|MP|G|xG|A|xA|\n"
-             "|:-|-:|-:|-:|-:|-:|\n")
+    table = (f"# {player_name}\n\n|Fixture|MP|G|xG|A|xA|P|\n"
+             "|:-|-:|-:|-:|-:|-:|-:|\n")
     total = {}
+    total_points = 0
+    total_bonus = 0
 
-    print(player_name)
-    for i, fixture in enumerate(fixtures):
+    for history, fixture in zip(history, fixtures[::-1]):
         minutes_played = fixture["time"]
         if fixture["position"].lower() != "sub":
             minutes_played = f"**{minutes_played}**"
-
-        print(f"vs. {team_converter(history[i]['opponent_team'])} {history[i]['team_h_score']}-{history[i]['team_a_score']}")
 
         table += (
             f"|{fixture['h_team']} {fixture['h_goals']}"
             f"-{fixture['a_goals']} {fixture['a_team']}"
             f"|{minutes_played}|{fixture['goals']}|{float(fixture['xG']):.2f}|"
-            f"{fixture['assists']}|{float(fixture['xA']):.2f}|\n")
+            f"{fixture['assists']}|{float(fixture['xA']):.2f}|"
+            f"{history['total_points']} ({history['bonus']})|\n")
 
         total = get_total(total, fixture)
+        total_points += history['total_points']
+        total_bonus += history['bonus']
 
     table += (f"||**{total['time']}**|**{int(total['goals'])}**|"
               f"**{float(total['xG']):.2f}**|**{int(total['assists'])}**|"
-              f"**{float(total['xA']):.2f}**|\n")
+              f"**{float(total['xA']):.2f}**|"
+              f"**{total_points} ({total_bonus})**\n")
 
     return table
 
@@ -250,7 +253,7 @@ def player_vs_player_table(player_A, player_B, number_of_fixtures):
 
     for player in [player_A, player_B]:
         fixtures = get_relevant_fixtures(player)[:number_of_fixtures]
-        history = player["history"][-number_of_fixtures:]
+        history = get_relevant_history(player["history"])[-number_of_fixtures:]
         table = create_player_table(player["web_name"], history, fixtures)
         tables.append(table)
 
@@ -350,6 +353,10 @@ def understat_team_converter(team_name):
         return team_dict[team_name]
     except KeyError:
         return team_name
+
+
+def get_relevant_history(history):
+    return [fixture for fixture in history if fixture["minutes"] > 0]
 
 
 def get_relevant_fixtures(player, team_name=None):
