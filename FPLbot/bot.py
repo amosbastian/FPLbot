@@ -187,7 +187,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        print(fpl_bot.versus_player_handler("Aguero", "Mane", 5))
+        print(fpl_bot.versus_player_handler("Foster", "Ederson", 5))
 
 
 if __name__ == "__main__":

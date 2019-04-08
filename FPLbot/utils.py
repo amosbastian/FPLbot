@@ -186,7 +186,46 @@ async def update_results():
 
 
 def create_goalkeeper_table(player, history, fixtures):
-    pass
+    table = (f"# {player['web_name']}\n\n|Fixture|MP|GA|xGA|Saves|P|\n"
+             "|:-|-:|-:|-:|-:|-:|-:|\n")
+    total = {}
+    total_points = 0
+    total_bonus = 0
+    total_conceded = 0
+    total_saves = 0
+    total_xGA = 0
+    total_minutes = 0
+
+    for history, fixture in zip(history, fixtures[::-1]):
+        minutes_played = fixture["time"]
+        if fixture["position"].lower() != "sub":
+            minutes_played = f"**{minutes_played}**"
+
+        database_fixture = database.results.find_one({"id": fixture["id"]})
+        if database_fixture["h"]["title"] == player["team"]:
+            xGA = float(database_fixture["xG"]["a"])
+        else:
+            xGA = float(database_fixture["xG"]["h"])
+
+        table += (
+            f"|{fixture['h_team']} {fixture['h_goals']}"
+            f"-{fixture['a_goals']} {fixture['a_team']}"
+            f"|{minutes_played}|{history['goals_conceded']}|"
+            f"{xGA:.2f}|{history['saves']}|"
+            f"{history['total_points']} ({history['bonus']})|\n")
+
+        total = get_total(total, fixture)
+        total_points += history['total_points']
+        total_bonus += history['bonus']
+        total_conceded += history['goals_conceded']
+        total_saves += history['saves']
+        total_xGA += xGA
+        total_minutes += int(fixture["time"])
+
+    table += (f"||**{total_minutes}**|**{total_conceded}**|**{total_xGA:.2f}**|"
+              f"**{total_saves}**|**{total_points} ({total_bonus})**|\n")
+
+    return table
 
 
 def get_player_table(players, risers=True):
@@ -256,7 +295,10 @@ def player_vs_player_table(player_A, player_B, number_of_fixtures):
     for player in [player_A, player_B]:
         fixtures = get_relevant_fixtures(player)[:number_of_fixtures]
         history = get_relevant_history(player["history"])[-number_of_fixtures:]
-        table = create_player_table(player, history, fixtures)
+        if player["element_type"] == 1:
+            table = create_goalkeeper_table(player, history, fixtures)
+        else:
+            table = create_player_table(player, history, fixtures)
         tables.append(table)
 
     return tables[0] + "\n\n" + tables[1]
