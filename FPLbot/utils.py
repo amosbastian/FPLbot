@@ -417,6 +417,7 @@ def find_player(player_name):
     except IndexError:
         logger.error(f"Player {player_name} could not be found!")
         return None
+
     return player
 
 
@@ -449,32 +450,34 @@ def get_relevant_fixtures(player, team_name=None):
     """Return all fixtures that the player has played for his current team
     (optionally) against the given team.
     """
-    fixture_ids = [result["id"] for result in database.results.find()]
-
     fixtures = [
         fixture for fixture in player["understat_history"]
         if (to_fpl_team(fixture["h_team"].lower()) in fpl_team_names or
             to_fpl_team(fixture["a_team"].lower()) in fpl_team_names) and
-        int(fixture["time"]) > 0 and fixture["id"] in fixture_ids
+        int(fixture["time"]) > 0
     ]
 
     if team_name:
         fixtures = [
             fixture for fixture in fixtures
-            if team_name == fixture["h_team"].lower() or
-            team_name == fixture["a_team"].lower()
+            if team_name.lower() == fixture["h_team"].lower() or
+            team_name.lower() == fixture["a_team"].lower()
         ]
 
-        # Player probably played for the given team before, so only include
+        # Player could've played for the given team before, so only include
         # fixtures played vs. them for his current team.
         if len(fixtures) > 10:
             fixtures = [
                 fixture for fixture in fixtures
                 if player["team"].lower() in [
-                    to_fpl_team(fixture["h_team"].lower()),
-                    to_fpl_team(fixture["a_team"].lower())
+                        to_fpl_team(fixture["h_team"].lower()),
+                        to_fpl_team(fixture["a_team"].lower())
                     ]
                 ]
+    else:
+        # If comparing player vs. player, then only include this season.
+        fixture_ids = [result["id"] for result in database.results.find()]
+        fixture = [f for f in fixtures if f["id"] in fixture_ids]
 
     return fixtures
 
