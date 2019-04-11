@@ -458,10 +458,11 @@ def get_relevant_fixtures(player, team_name=None):
     ]
 
     if team_name:
+        team_name = to_fpl_team(team_name.lower()).lower()
         fixtures = [
             fixture for fixture in fixtures
-            if team_name.lower() == fixture["h_team"].lower() or
-            team_name.lower() == fixture["a_team"].lower()
+            if team_name == to_fpl_team(fixture["h_team"].lower()) or
+            team_name == to_fpl_team(fixture["a_team"].lower())
         ]
 
         # Player could've played for the given team before, so only include
