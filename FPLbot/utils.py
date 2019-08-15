@@ -165,7 +165,10 @@ async def update_players():
             {"$text": {"$search": search_string}},
             {"score": {"$meta": "textScore"}}
         ).sort([("score", {"$meta": "textScore"})])
-        relevant_player = list(players)[0]
+        try:
+            relevant_player = list(players)[0]
+        except IndexError:
+            continue
 
         database.players.update_one(
             {"id": relevant_player["id"]},
@@ -490,3 +493,4 @@ if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(update_players())
         loop.close()
+
