@@ -179,7 +179,7 @@ async def update_players():
 async def update_results():
     async with aiohttp.ClientSession() as session:
         understat = Understat(session)
-        results = await understat.get_league_results("EPL", 2018)
+        results = await understat.get_league_results("EPL", 2019)
         for result in results:
             result["h"]["title"] = understat_team_converter(result["h"]["title"])
             result["a"]["title"] = understat_team_converter(result["a"]["title"])
@@ -481,7 +481,7 @@ def get_relevant_fixtures(player, team_name=None):
     else:
         # If comparing player vs. player, then only include this season.
         fixture_ids = [result["id"] for result in database.results.find()]
-        fixture = [f for f in fixtures if f["id"] in fixture_ids]
+        fixtures = [f for f in fixtures if f["id"] in fixture_ids]
 
     return fixtures
 
@@ -493,4 +493,3 @@ if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(update_players())
         loop.close()
-
