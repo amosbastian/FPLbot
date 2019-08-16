@@ -45,7 +45,8 @@ class FPLBot:
         fallers = []
 
         for new_player in new_players:
-            old_player = self.database.players.find_one({"id": new_player.id})
+            old_player = self.database.players.find_one(
+                {"web_name": new_player.web_name})
             # New player has been added to the game
             if not old_player:
                 logger.info(f"New player added: {new_player}.")
