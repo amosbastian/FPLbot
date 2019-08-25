@@ -178,3 +178,26 @@ fpl_team_names = [
     "west ham",
     "wolves"
 ]
+
+twitter_usernames = [
+    "afcbournemouth",
+    "ManCity",
+    "LFC",
+    "Arsenal",
+    "LCFC",
+    "ManUtd",
+    "CPFC",
+    "SheffieldUnited",
+    "WatfordFC",
+    "SouthamptonFC",
+    "WestHam",
+    "OfficialBHAFC",
+    "ChelseaFC",
+    "NorwichCityFC",
+    "Everton",
+    "AVFCOfficial",
+    "SpursOfficial",
+    "NUFC",
+    "Wolves",
+    "BurnleyOfficial"
+]
