@@ -105,5 +105,6 @@ venv.bak/
 
 .vscode/
 config.json
+twitter_config.json
 
 *.swp
