@@ -179,25 +179,30 @@ fpl_team_names = [
     "wolves"
 ]
 
-twitter_usernames = [
-    "afcbournemouth",
-    "ManCity",
-    "LFC",
-    "Arsenal",
-    "LCFC",
-    "ManUtd",
-    "CPFC",
-    "SheffieldUnited",
-    "WatfordFC",
-    "SouthamptonFC",
-    "WestHam",
-    "OfficialBHAFC",
-    "ChelseaFC",
-    "NorwichCityFC",
-    "Everton",
-    "AVFCOfficial",
-    "SpursOfficial",
-    "NUFC",
-    "Wolves",
-    "BurnleyOfficial"
+twitter_usernames = {
+    "BOU": "afcbournemouth",
+    "MCI": "ManCity",
+    "LIV": "LFC",
+    "ARS": "Arsenal",
+    "LEI": "LCFC",
+    "MUN": "ManUtd",
+    "CRY": "CPFC",
+    "SHU": "SheffieldUnited",
+    "WAT": "WatfordFC",
+    "SOU": "SouthamptonFC",
+    "WHU": "WestHam",
+    "BHA": "OfficialBHAFC",
+    "CHE": "ChelseaFC",
+    "NOR": "NorwichCityFC",
+    "EVE": "Everton",
+    "AVL": "AVFCOfficial",
+    "TOT": "SpursOfficial",
+    "NEW": "NUFC",
+    "WOL": "Wolves",
+    "BUR": "BurnleyOfficial"
+}
+
+lineup_markers = [
+    ("line", "up"),
+    ("team", "news")
 ]
