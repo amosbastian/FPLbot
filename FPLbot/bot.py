@@ -3,18 +3,20 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import datetime
 
 import aiohttp
 import praw
+import prawcore
 from fpl import FPL
 from fpl.utils import position_converter
 from pymongo import MongoClient
 
 from constants import fpl_team_names, versus_pattern
 from utils import (create_logger, find_player, get_player_table,
-                   player_vs_player_table, player_vs_team_table, to_fpl_team,
-                   update_players, get_relevant_fixtures)
+                   get_relevant_fixtures, player_vs_player_table,
+                   player_vs_team_table, to_fpl_team, update_players)
 
 dirname = os.path.dirname(os.path.realpath(__file__))
 logger = create_logger()
@@ -188,9 +190,19 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl_bot = FPLBot(config, session)
 
-        fpl_bot.run()
-
-
+        while True:
+            try:
+                fpl_bot.run()
+            except prawcore.exceptions.ServerError as http_error:
+                logger.error(http_error)
+                time.sleep(120)
+            except prawcore.exceptions.ResponseException as response_error:
+                logger.error(response_error)
+                time.sleep(120)
+            except Exception as error:
+                logger.error(error)
+                time.sleep(360)
+            
 if __name__ == "__main__":
     config = json.loads(open(f"{dirname}/../config.json").read())
     try:
