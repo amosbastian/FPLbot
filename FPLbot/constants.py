@@ -159,13 +159,14 @@ to_fpl_team_dict = {
 fpl_team_names = [
     "arsenal",
     "aston villa",
-    "bournemouth",
     "brighton",
     "burnley",
     "chelsea",
     "crystal palace",
     "everton",
+    "fulham",
     "leicester",
+    "leeds",
     "liverpool",
     "man city",
     "man utd",
@@ -174,13 +175,12 @@ fpl_team_names = [
     "sheffield utd",
     "southampton",
     "spurs",
-    "watford",
+    "west brom"
     "west ham",
     "wolves"
 ]
 
 twitter_usernames = {
-    "BOU": "afcbournemouth",
     "MCI": "ManCity",
     "LIV": "LFC",
     "ARS": "Arsenal",
@@ -188,18 +188,19 @@ twitter_usernames = {
     "MUN": "ManUtd",
     "CRY": "CPFC",
     "SHU": "SheffieldUnited",
-    "WAT": "WatfordFC",
     "SOU": "SouthamptonFC",
     "WHU": "WestHam",
     "BHA": "OfficialBHAFC",
     "CHE": "ChelseaFC",
-    "NOR": "NorwichCityFC",
     "EVE": "Everton",
     "AVL": "AVFCOfficial",
     "TOT": "SpursOfficial",
     "NEW": "NUFC",
     "WOL": "Wolves",
-    "BUR": "BurnleyOfficial"
+    "BUR": "BurnleyOfficial",
+    "LEE": "LUFC",
+    "WBA": "WBA",
+    "FUL": "FulhamFC"
 }
 
 lineup_markers = [
