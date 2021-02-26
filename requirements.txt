@@ -1,4 +1,4 @@
-aiohttp==3.5.4
+aiohttp==3.7.4
 appdirs==1.4.3
 astroid==2.3.3
 async-timeout==3.0.1
