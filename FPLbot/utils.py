@@ -57,7 +57,6 @@ async def understat_players_data(session):
     """Returns a dict containing general player data retrieved from
     https://understat.com/.
     """
-    logger.info("Getting Understat players data.")
     html = await fetch(session, "https://understat.com/league/EPL/")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -84,7 +83,6 @@ async def understat_matches_data(session, player):
     """Sets the 'matches' attribute of the given player to the data found on
     https://understat.com/player/<player_id>.
     """
-    logger.info(f"Getting {player['player_name']} Understat matches data.")
     html = await fetch(session, f"https://understat.com/player/{player['id']}")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -116,8 +114,6 @@ async def get_understat_players():
     """Returns a list of dicts containing all information available on
     https://understat.com/ for Premier League players.
     """
-    logger.info("Retrieving player information from https://understat.com/.")
-
     async with aiohttp.ClientSession() as session:
         players_data = await understat_players_data(session)
         tasks = [asyncio.ensure_future(understat_matches_data(session, player))
@@ -137,7 +133,6 @@ def create_text_indexes():
 
 async def update_players():
     """Updates all players in the database."""
-    logger.info("Updating FPL players in database.")
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)
@@ -149,7 +144,6 @@ async def update_players():
     database.players.bulk_write(requests)
     create_text_indexes()
 
-    logger.info("Adding Understat data to players in database.")
     understat_players = await get_understat_players()
 
     for player in understat_players:

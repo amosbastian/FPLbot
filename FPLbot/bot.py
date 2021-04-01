@@ -132,7 +132,6 @@ class FPLBot:
         )
 
     def add_comment_to_database(self, comment):
-        logger.info(f"Adding comment with ID {comment.id} to the database.")
         self.database.comments.update_one(
             {"comment_id": comment.id},
             {"$set": {"comment_id": comment.id}},
@@ -141,11 +140,9 @@ class FPLBot:
 
     def comment_handler(self, comment):
         """Generic comment handler."""
-        logger.info(f"Handling COMMENT with ID {comment.id}.")
         match = re.search(versus_pattern, comment.body.lower())
 
         if not match:
-            logger.info(f"Comment with ID {comment.id} does not match pattern.")
             return
 
         player_name = match.group(1).lower().strip()
@@ -163,8 +160,6 @@ class FPLBot:
                 player_name, opponent_name, number)
 
         if reply_text:
-            logger.info(f"Replying ({player_name} vs. {opponent_name}) to "
-                        f"comment with ID {comment.id}.")
             comment.reply(reply_text)
             self.add_comment_to_database(comment)
 
