@@ -41,7 +41,7 @@ class FPLBot:
         time the database was updated.
         """
         logger.info("Retrieving risers and fallers.")
-        new_players = await self.fpl.get_players(include_summary=True)
+        new_players = await self.fpl.get_players(include_summary=False)
 
         risers = []
         fallers = []
