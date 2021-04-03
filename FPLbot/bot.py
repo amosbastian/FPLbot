@@ -36,12 +36,11 @@ class FPLBot:
             username=config.get("USERNAME"))
         self.subreddit = self.reddit.subreddit(self.config.get("SUBREDDIT"))
 
-    async def get_price_changers(self):
+    async def get_price_changers(self, new_players):
         """Returns a list of players whose price has changed since the last
         time the database was updated.
         """
         logger.info("Retrieving risers and fallers.")
-        new_players = await self.fpl.get_players(include_summary=False)
 
         risers = []
         fallers = []
@@ -60,9 +59,9 @@ class FPLBot:
 
         return risers, fallers
 
-    async def post_price_changes(self):
+    async def post_price_changes(self, players):
         """Posts the price changes to Reddit."""
-        risers, fallers = await self.get_price_changers()
+        risers, fallers = await self.get_price_changers(players)
         risers_table = get_player_table(risers, True)
         fallers_table = get_player_table(fallers, False)
 
