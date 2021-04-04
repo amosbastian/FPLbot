@@ -27,15 +27,7 @@ async def main(config):
         fpl_bot = FPLBot(config, session)
         new_players = await fpl.get_players(include_summary=False)
 
-        for new_player in new_players:
-            old_player = database.players.find_one({"id": new_player.id})
-            # New player has been added to the game
-            if not old_player:
-                continue
-
-            if (old_player["now_cost"] > new_player.now_cost or
-                    old_player["now_cost"] < new_player.now_cost):
-                await fpl_bot.post_price_changes(new_players)
+        await fpl_bot.post_price_changes(new_players)
 
 if __name__ == "__main__":
     with open(f"{dirname}/../config.json") as file:
