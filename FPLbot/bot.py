@@ -162,6 +162,16 @@ class FPLBot:
             comment.reply(reply_text)
             self.add_comment_to_database(comment)
 
+    async def has_posted_price_change(self):
+        today = datetime.now()
+        current_date = f"({today:%B} {today.day}, {today.year})"
+        post_title = f"Player Price Changes {current_date}"
+
+        for submission in self.reddit.redditor("FantasyPL_bot").submissions.new():
+            if (submission.title == post_title):
+                return True
+            return False
+
     def is_new_comment(self, comment_id):
         if self.database.comments.count_documents({"comment_id": comment_id}) < 1:
             return True

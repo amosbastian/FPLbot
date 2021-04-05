@@ -133,6 +133,7 @@ def create_text_indexes():
 
 async def update_players():
     """Updates all players in the database."""
+    logger.info(f"Updating players")
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)

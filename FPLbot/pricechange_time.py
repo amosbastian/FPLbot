@@ -25,9 +25,11 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         fpl_bot = FPLBot(config, session)
-        new_players = await fpl.get_players(include_summary=True)
-
-        await fpl_bot.post_price_changes(new_players)
+        has_already_posted = await fpl_bot.has_posted_price_change()
+        
+        if not has_already_posted:
+            new_players = await fpl.get_players(include_summary=True)
+            await fpl_bot.post_price_changes(new_players)
 
 if __name__ == "__main__":
     with open(f"{dirname}/../config.json") as file:
