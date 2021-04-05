@@ -25,7 +25,7 @@ async def main(config):
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         fpl_bot = FPLBot(config, session)
-        new_players = await fpl.get_players(include_summary=False)
+        new_players = await fpl.get_players(include_summary=True)
 
         await fpl_bot.post_price_changes(new_players)
 
