@@ -153,7 +153,10 @@ to_fpl_team_dict = {
     "the canaries": "norwich",
     "sheffield": "sheffield utd",
     "sheffield united": "sheffield utd",
-    "the blades": "sheffield utd"
+    "the blades": "sheffield utd",
+    "brentford fc": "brentford",
+    "watford fc": "watford",
+    "norwich city": "norwich",
 }
 
 fpl_team_names = [
@@ -177,7 +180,10 @@ fpl_team_names = [
     "spurs",
     "west brom"
     "west ham",
-    "wolves"
+    "wolves",
+    "brentford",
+    "norwich",
+    "watford"
 ]
 
 twitter_usernames = {

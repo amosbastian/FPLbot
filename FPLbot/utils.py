@@ -83,27 +83,16 @@ async def understat_matches_data(session, player):
     """Sets the 'matches' attribute of the given player to the data found on
     https://understat.com/player/<player_id>.
     """
-    html = await fetch(session, f"https://understat.com/player/{player['id']}")
 
-    soup = BeautifulSoup(html, "html.parser")
-    scripts = soup.find_all("script")
-    pattern = re.compile(r"var\s+matchesData\s+=\s+JSON.parse\(\'(.*?)\'\);")
-
-    for script in scripts:
-        match = re.search(pattern, script.string)
-        if match:
-            break
-
-    # If no match could be found, retry (probably rate limited?)
     try:
-        byte_data = codecs.escape_decode(match.group(1))
-        matches_data = json.loads(byte_data[0].decode("utf-8"))
+        async with aiohttp.ClientSession() as session:
+            understat = Understat(session)
+            results = await understat.get_player_matches(player["player_id"])
+            for result in results:
+                result["h"]["title"] = understat_team_converter(result["h"]["title"])
+                result["a"]["title"] = understat_team_converter(result["a"]["title"])
 
-        for fixture in matches_data:
-            fixture["h_team"] = understat_team_converter(fixture["h_team"])
-            fixture["a_team"] = understat_team_converter(fixture["a_team"])
-
-        player["understat_history"] = matches_data
+            player["understat_history"] = results
     except UnboundLocalError:
         await understat_matches_data(session, player)
 
@@ -174,7 +163,7 @@ async def update_players():
 async def update_results():
     async with aiohttp.ClientSession() as session:
         understat = Understat(session)
-        results = await understat.get_league_results("EPL", 2019)
+        results = await understat.get_league_results("EPL", 2021)
         for result in results:
             result["h"]["title"] = understat_team_converter(result["h"]["title"])
             result["a"]["title"] = understat_team_converter(result["a"]["title"])
