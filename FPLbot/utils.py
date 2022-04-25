@@ -62,7 +62,7 @@ async def understat_players_data(session):
 
     # Convert Understat player name to FPL player name
     for player in player_data:
-        logger.info(player["player_name"])
+        print(player["player_name"])
         player["team_title"] = understat_team_converter(player["team_title"])
         player["player_name"] = understat_player_converter(player["player_name"])
 
@@ -77,6 +77,7 @@ async def understat_matches_data(session, player):
     try:
         understat = Understat(session)
         matches_data = await understat.get_player_matches(player["id"])
+        await asyncio.sleep(0.1)
         for fixture in matches_data:
             fixture["h_team"] = understat_team_converter(fixture["h_team"])
             fixture["a_team"] = understat_team_converter(fixture["a_team"])
@@ -93,7 +94,9 @@ async def get_understat_players():
     https://understat.com/ for Premier League players.
     """
     async with aiohttp.ClientSession() as session:
+        print("Getting players data...")
         players_data = await understat_players_data(session)
+        print("Getting matches data...")
         tasks = [asyncio.ensure_future(understat_matches_data(session, player))
                  for player in players_data]
         players = await asyncio.gather(*tasks)
@@ -112,6 +115,7 @@ def create_text_indexes():
 async def update_players():
     """Updates all players in the database."""
     logger.info(f"Updating players")
+    print("Getting FPL players...")
     async with aiohttp.ClientSession() as session:
         fpl = FPL(session)
         players = await fpl.get_players(include_summary=True, return_json=True)
@@ -123,6 +127,7 @@ async def update_players():
     database.players.bulk_write(requests)
     create_text_indexes()
 
+    print("Getting Understat players...")
     understat_players = await get_understat_players()
 
     for player in understat_players:
@@ -152,7 +157,7 @@ async def update_players():
 async def update_results():
     async with aiohttp.ClientSession() as session:
         understat = Understat(session)
-        results = await understat.get_league_results("EPL", 2021)
+        results = await understat.get_league_results("EPL", "2021")
         for result in results:
             result["h"]["title"] = understat_team_converter(result["h"]["title"])
             result["a"]["title"] = understat_team_converter(result["a"]["title"])
