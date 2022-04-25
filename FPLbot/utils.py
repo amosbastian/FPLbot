@@ -77,7 +77,6 @@ async def understat_matches_data(session, player):
     try:
         understat = Understat(session)
         matches_data = await understat.get_player_matches(player["id"])
-        await asyncio.sleep(0.1)
         for fixture in matches_data:
             fixture["h_team"] = understat_team_converter(fixture["h_team"])
             fixture["a_team"] = understat_team_converter(fixture["a_team"])
@@ -129,6 +128,7 @@ async def update_players():
 
     print("Getting Understat players...")
     understat_players = await get_understat_players()
+    print("Retrieved Understat players...")
 
     for player in understat_players:
         # Only update FPL player with desired attributes
