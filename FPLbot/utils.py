@@ -87,7 +87,7 @@ async def understat_matches_data(session, player):
     try:
         async with aiohttp.ClientSession() as session:
             understat = Understat(session)
-            matches_data = await understat.get_player_matches(player["player_id"])
+            matches_data = await understat.get_player_matches(player["id"])
             for fixture in matches_data:
                 fixture["h_team"] = understat_team_converter(fixture["h_team"])
                 fixture["a_team"] = understat_team_converter(fixture["a_team"])
