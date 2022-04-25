@@ -57,22 +57,12 @@ async def understat_players_data(session):
     """Returns a dict containing general player data retrieved from
     https://understat.com/.
     """
-    html = await fetch(session, "https://understat.com/league/EPL/")
-
-    soup = BeautifulSoup(html, "html.parser")
-    scripts = soup.find_all("script")
-    pattern = re.compile(r"var\s+playersData\s+=\s+JSON.parse\(\'(.*?)\'\);")
-
-    for script in scripts:
-        match = re.search(pattern, script.string)
-        if match:
-            break
-
-    byte_data = codecs.escape_decode(match.group(1))
-    player_data = json.loads(byte_data[0].decode("utf-8"))
+    understat = Understat(session)
+    player_data = await understat.get_league_players("EPL", "2021")
 
     # Convert Understat player name to FPL player name
     for player in player_data:
+        logger.info(player["player_name"])
         player["team_title"] = understat_team_converter(player["team_title"])
         player["player_name"] = understat_player_converter(player["player_name"])
 
@@ -85,15 +75,13 @@ async def understat_matches_data(session, player):
     """
 
     try:
-        logger.info(f"Fetching matches for {player['player_name']}")
-        async with aiohttp.ClientSession() as session:
-            understat = Understat(session)
-            matches_data = await understat.get_player_matches(player["id"])
-            for fixture in matches_data:
-                fixture["h_team"] = understat_team_converter(fixture["h_team"])
-                fixture["a_team"] = understat_team_converter(fixture["a_team"])
+        understat = Understat(session)
+        matches_data = await understat.get_player_matches(player["id"])
+        for fixture in matches_data:
+            fixture["h_team"] = understat_team_converter(fixture["h_team"])
+            fixture["a_team"] = understat_team_converter(fixture["a_team"])
 
-            player["understat_history"] = matches_data
+        player["understat_history"] = matches_data
     except UnboundLocalError:
         await understat_matches_data(session, player)
 
