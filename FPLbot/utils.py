@@ -86,14 +86,14 @@ async def understat_matches_data(session, player):
 
     try:
         logger.info(f"Fetching matches for {player['player_name']}")
-        understat = Understat(session)
-        matches_data = await understat.get_player_matches(player["id"])
-        for fixture in matches_data:
-            fixture["h_team"] = understat_team_converter(fixture["h_team"])
-            fixture["a_team"] = understat_team_converter(fixture["a_team"])
+        async with aiohttp.ClientSession() as session:
+            understat = Understat(session)
+            matches_data = await understat.get_player_matches(player["id"])
+            for fixture in matches_data:
+                fixture["h_team"] = understat_team_converter(fixture["h_team"])
+                fixture["a_team"] = understat_team_converter(fixture["a_team"])
 
-        player["understat_history"] = matches_data
-            
+            player["understat_history"] = matches_data
     except UnboundLocalError:
         await understat_matches_data(session, player)
 
