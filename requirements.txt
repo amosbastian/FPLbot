@@ -9,7 +9,7 @@ bs4==0.0.1
 certifi==2018.11.29
 chardet==3.0.4
 Click==7.0
-codecov==2.0.15
+codecov==2.0.16
 colorama==0.4.1
 coverage==4.5.2
 fpl==0.6.2
